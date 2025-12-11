@@ -13,11 +13,11 @@ import matplotlib.animation as animation
 import matplotlib.colors as colors
 
 
-path_data = "./synthetic_data.nc"
+path_data = "./data"
 path_results = "./outputs/"
-name_model = "_day_IPSL-CM6A-LR_piControl_r1i1p1f1_gr_"
-start_date = "18500101"
-end_date = "38491231"
+name_model = ""
+start_date = ""
+end_date = ""
 
 plt.ioff()
 #plt.ion()
@@ -27,39 +27,38 @@ plt.ioff()
 # Selection functions
 
 def extract_time_series_observable(min_lat, min_lon, max_lat, max_lon): 
-    
-    # result = xr.open_dataset(path_data+"tas"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
-    # result = result.sel(time=(result['time.month']>=5) & (result['time.month']<=9),lat=slice(min_lat,max_lat),lon=slice(min_lon,max_lon))['tas'].mean(dim=['lat','lon'])
     time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
-    return xr.open_dataset(path_data, decode_times=time_coder)["t2m"]
+    result = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+".nc", decode_times=time_coder)
+    result = result.sel(time=(result['time.month']>=5) & (result['time.month']<=9),lat=slice(min_lat,max_lat),lon=slice(min_lon,max_lon))['t2m'].mean(dim=['lat','lon'])
+    return result
 
 def select_field(v, j, c_n):
     if v=="slp":
-        data = xr.open_dataset(path_data+"psl"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'psl'
     elif v=="t2m":
-        data = xr.open_dataset(path_data+"tas"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"tas"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'tas'
     elif v=="t850":
-        data = xr.open_dataset(path_data+"ta850"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ta'
     elif v=="v250":
-        data = xr.open_dataset(path_data+"va250"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"va250"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'va'
     elif v=="u250":
-        data = xr.open_dataset(path_data+"ua250"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ua250"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ua'
     elif v=="v500":
-        data = xr.open_dataset(path_data+"va500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"va500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'va'
     elif v=="u500":
-        data = xr.open_dataset(path_data+"ua500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ua500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ua'
     elif v=="z500":
-        data = xr.open_dataset(path_data+"z500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"z500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'zg'
     elif v=="mrsos":
-        data = xr.open_dataset(path_data+"mrsos"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"mrsos"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'mrsos'
                 
     dates_to_select = c_n.time.values + timedelta(days=j)
@@ -103,31 +102,31 @@ def select_and_arange(data, v, v_bis, d, j_begin, j_end):
 
 def select_field_group(v, j_list, level_tab, c_n_list):
     if v=="slp":
-        data = xr.open_dataset(path_data+"psl"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'psl'
     elif v=="t2m":
-        data = xr.open_dataset(path_data+"tas"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
-        v_bis = 'tas'
+        data = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+".nc", use_cftime=True)
+        v_bis = 't2m'
     elif v=="t850":
-        data = xr.open_dataset(path_data+"ta850"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ta'
     elif v=="v250":
-        data = xr.open_dataset(path_data+"va250"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"va250"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'va'
     elif v=="u250":
-        data = xr.open_dataset(path_data+"ua250"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ua250"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ua'
     elif v=="v500":
-        data = xr.open_dataset(path_data+"va500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"va500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'va'
     elif v=="u500":
-        data = xr.open_dataset(path_data+"ua500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ua500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ua'
     elif v=="z500":
-        data = xr.open_dataset(path_data+"z500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"z500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'zg'
     elif v=="mrsos":
-        data = xr.open_dataset(path_data+"mrsos"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"mrsos"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'mrsos'
         
     result_list = []
@@ -155,31 +154,31 @@ def select_field_group(v, j_list, level_tab, c_n_list):
 
 def select_field_group_rolling(v, j_list, level_tab, c_n_list):
     if v=="slp":
-        data = xr.open_dataset(path_data+"psl"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'psl'
     elif v=="t2m":
-        data = xr.open_dataset(path_data+"tas"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"tas"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'tas'
     elif v=="t850":
-        data = xr.open_dataset(path_data+"ta850"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ta'
     elif v=="v250":
-        data = xr.open_dataset(path_data+"va250"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"va250"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'va'
     elif v=="u250":
-        data = xr.open_dataset(path_data+"ua250"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ua250"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ua'
     elif v=="v500":
-        data = xr.open_dataset(path_data+"va500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"va500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'va'
     elif v=="u500":
-        data = xr.open_dataset(path_data+"ua500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"ua500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ua'
     elif v=="z500":
-        data = xr.open_dataset(path_data+"z500"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"z500"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'zg'
     elif v=="mrsos":
-        data = xr.open_dataset(path_data+"mrsos"+name_model+start_date+"-"+end_date+".nc", use_cftime=True)
+        data = xr.open_dataset(path_data+"mrsos"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'mrsos'
         
     result_list = []
@@ -204,32 +203,32 @@ def select_field_group_rolling(v, j_list, level_tab, c_n_list):
 
 def select_climato(v):
     if v=="slp":
-        climato_mean = xr.open_dataset(path_data+"psl"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['psl'][0,:,:]/100
-        climato_var = xr.open_dataset(path_data+"psl"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['psl'][0,:,:]/10000
+        climato_mean = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['psl'][0,:,:]/100
+        climato_var = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['psl'][0,:,:]/10000
     elif v=="t2m":
-        climato_mean = xr.open_dataset(path_data+"tas"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['tas'][0,:,:]-273.15
-        climato_var = xr.open_dataset(path_data+"tas"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['tas'][0,:,:]
+        climato_mean = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['tas'][0,:,:]-273.15
+        climato_var = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['tas'][0,:,:]
     elif v=="t850":
-        climato_mean = xr.open_dataset(path_data+"ta850"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['ta'][0,0,:,:]-273.15
-        climato_var = xr.open_dataset(path_data+"ta850"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['ta'][0,0,:,:]
+        climato_mean = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['ta'][0,0,:,:]-273.15
+        climato_var = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['ta'][0,0,:,:]
     elif v=="v250":
-        climato_mean = xr.open_dataset(path_data+"va250"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['va'][0,0,:,:]
-        climato_var = xr.open_dataset(path_data+"va250"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['va'][0,0,:,:]
+        climato_mean = xr.open_dataset(path_data+"va250"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['va'][0,0,:,:]
+        climato_var = xr.open_dataset(path_data+"va250"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['va'][0,0,:,:]
     elif v=="u250":
-        climato_mean = xr.open_dataset(path_data+"ua250"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['ua'][0,0,:,:]
-        climato_var = xr.open_dataset(path_data+"ua250"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['ua'][0,0,:,:]
+        climato_mean = xr.open_dataset(path_data+"ua250"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['ua'][0,0,:,:]
+        climato_var = xr.open_dataset(path_data+"ua250"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['ua'][0,0,:,:]
     elif v=="v500":
-        climato_mean = xr.open_dataset(path_data+"va500"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['va'][0,0,:,:]
-        climato_var = xr.open_dataset(path_data+"va500"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['va'][0,0,:,:]
+        climato_mean = xr.open_dataset(path_data+"va500"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['va'][0,0,:,:]
+        climato_var = xr.open_dataset(path_data+"va500"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['va'][0,0,:,:]
     elif v=="u500":
-        climato_mean = xr.open_dataset(path_data+"ua500"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['ua'][0,0,:,:]
-        climato_var = xr.open_dataset(path_data+"ua500"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['ua'][0,0,:,:]
+        climato_mean = xr.open_dataset(path_data+"ua500"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['ua'][0,0,:,:]
+        climato_var = xr.open_dataset(path_data+"ua500"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['ua'][0,0,:,:]
     elif v=="z500":
-        climato_mean = xr.open_dataset(path_data+"z500"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['zg'][0,0,:,:]
-        climato_var = xr.open_dataset(path_data+"z500"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['zg'][0,0,:,:]
+        climato_mean = xr.open_dataset(path_data+"z500"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['zg'][0,0,:,:]
+        climato_var = xr.open_dataset(path_data+"z500"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['zg'][0,0,:,:]
     if v=="mrsos":
-        climato_mean = xr.open_dataset(path_data+"mrsos"+name_model+start_date+"-"+end_date+"_mean.nc", use_cftime=True)['mrsos'][0,:,:]
-        climato_var = xr.open_dataset(path_data+"mrsos"+name_model+start_date+"-"+end_date+"_variance.nc", use_cftime=True)['mrsos'][0,:,:]
+        climato_mean = xr.open_dataset(path_data+"mrsos"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['mrsos'][0,:,:]
+        climato_var = xr.open_dataset(path_data+"mrsos"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['mrsos'][0,:,:]
     return climato_mean, climato_var
             
 
