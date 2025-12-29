@@ -13,7 +13,7 @@ import matplotlib.animation as animation
 import matplotlib.colors as colors
 
 
-path_data = "./data"
+path_data = "./data/"
 path_results = "./outputs/"
 name_model = ""
 start_date = ""
@@ -29,6 +29,7 @@ plt.ioff()
 def extract_time_series_observable(min_lat, min_lon, max_lat, max_lon): 
     time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
     result = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+".nc", decode_times=time_coder)
+    result = result.sel(lat=slice(None, None, -1))
     result = result.sel(time=(result['time.month']>=5) & (result['time.month']<=9),lat=slice(min_lat,max_lat),lon=slice(min_lon,max_lon))['t2m'].mean(dim=['lat','lon'])
     return result
 
@@ -106,6 +107,7 @@ def select_field_group(v, j_list, level_tab, c_n_list):
         v_bis = 'psl'
     elif v=="t2m":
         data = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+".nc", use_cftime=True)
+        data = data.sel(lat=slice(None, None, -1))
         v_bis = 't2m'
     elif v=="t850":
         data = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+".nc", use_cftime=True)
@@ -157,8 +159,9 @@ def select_field_group_rolling(v, j_list, level_tab, c_n_list):
         data = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'psl'
     elif v=="t2m":
-        data = xr.open_dataset(path_data+"tas"+name_model+start_date+end_date+".nc", use_cftime=True)
-        v_bis = 'tas'
+        data = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+".nc", use_cftime=True)
+        data = data.sel(lat=slice(None, None, -1))
+        v_bis = 't2m'
     elif v=="t850":
         data = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+".nc", use_cftime=True)
         v_bis = 'ta'
@@ -206,8 +209,8 @@ def select_climato(v):
         climato_mean = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['psl'][0,:,:]/100
         climato_var = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['psl'][0,:,:]/10000
     elif v=="t2m":
-        climato_mean = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['tas'][0,:,:]-273.15
-        climato_var = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['tas'][0,:,:]
+        climato_mean = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+"_mean2.nc", use_cftime=True)['t2m']-273.15
+        climato_var = xr.open_dataset(path_data+"t2m"+name_model+start_date+end_date+"_var2.nc", use_cftime=True)['t2m']
     elif v=="t850":
         climato_mean = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['ta'][0,0,:,:]-273.15
         climato_var = xr.open_dataset(path_data+"ta850"+name_model+start_date+end_date+"_variance.nc", use_cftime=True)['ta'][0,0,:,:]
@@ -1167,7 +1170,7 @@ if __name__ == "__main__":
         #hursmin: min near surface relative humidity
         #hurs: near surface relative-humidity 
 
-    auto_corr_series = np.zeros((rolling_periods_tab.size,31)) # 31 is for days where autocorrelation is computed
+    auto_corr_series = np.zeros((rolling_periods_tab.size, 31)) # 31 is for days where autocorrelation is computed
     quantile_tab = np.zeros((rolling_periods_tab.size,level_tab.size))
     closest_neighbors_list = []
 
@@ -1214,7 +1217,7 @@ if __name__ == "__main__":
         
         #% Parameters
         nb_closest = 50 # number of closest neighbors of the observable
-        rolling_periods_tab = np.array([1,3,5,11,15,31]) # number of rolling days
+        rolling_periods_tab = np.array([15, 31]) # np.array([1,3,5,11,15,31]) # number of rolling days
         level_tab = np.array([0.5,0.75,0.95,0.99,0.999,0.9999]) # quantiles
         j_list = range(-15,16) # days considered with respect to central date (closest observable)
         var_tab = ["t2m"] # ["slp","t2m","v250","u250","v500","u500","t850", "z500","mrsos"] # variables to consider, look at others, missing data for z500, hur-hus -> relative and specific humidity

@@ -21,5 +21,5 @@ res_ds.to_netcdf("./data/t2m.nc")
 mean_ds = res_ds.mean(dim="time")
 mean_ds.to_netcdf("./data/t2m_mean.nc")
 
-var_ds = res_ds.mean(dim="time")
+var_ds = res_ds.var(dim="time")
 var_ds.to_netcdf("./data/t2m_variance.nc")
