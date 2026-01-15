@@ -204,6 +204,9 @@ def select_field_group_rolling(v, j_list, level_tab, c_n_list):
     return result_list
 
 
+
+
+
 def select_climato(v):
     if v=="slp":
         climato_mean = xr.open_dataset(path_data+"psl"+name_model+start_date+end_date+"_mean.nc", use_cftime=True)['psl'][0,:,:]/100
@@ -265,7 +268,6 @@ def find_closest_neighbors(level_obs, series_obs, nb_closest, calendar_spacing):
     return series_obs_closest.sortby((series_obs_closest-level_obs)**2)[:nb_closest]
 
 def compute_closest_days_observable(series_obs, rol_days, nb_closest, level_tab):
-    
     # Rolling mean
     series_obs_rolling = series_obs.rolling(time=rol_days, center=True).mean()
     
@@ -1241,7 +1243,6 @@ if __name__ == "__main__":
                         
                     for idlevel, level in enumerate(level_tab):
                         f = field_levels[idlevel][idj]
-                        # Mean and variance over the members
                         m = f.mean('time')
                         var = f.var('time')
                             

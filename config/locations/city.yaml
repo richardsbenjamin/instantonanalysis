@@ -1,4 +1,5 @@
-name: "paris"
+name: "test_city"
+output_folder: "/test_city"
 box:
   lon_min: 1.25
   lon_max: 3.75

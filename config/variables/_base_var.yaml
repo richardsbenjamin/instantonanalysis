@@ -1,0 +1,11 @@
+name: ???
+alias: ???
+unit: ???
+transpose: ["time", "lat", "lon"]
+offset: 0
+scale_factor: 1
+squeeze: []
+contour_levels: ???
+data_path: ???
+climate_mean_path: ???
+climate_var_path: ???

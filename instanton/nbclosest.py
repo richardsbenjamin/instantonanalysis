@@ -1,0 +1,118 @@
+from __future__ import annotations
+
+import numpy as np
+import xarray as xr
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from instantonanalysis.instanton.analysis import (
+    calculate_autocorrelation,
+    calculate_closest_neighbors,
+    calculate_quantiles,
+    calculate_rolling,
+)
+from instantonanalysis.instanton.utils import (
+    create_folder,
+    filter_by_months,
+)
+from instantonanalysis.instanton.schema import NClosestConfig
+
+if TYPE_CHECKING:
+    from instantonanalysis.instanton._typing import DistanceFunction
+    from instantonanalysis.instanton.schema import AnalysisConfig
+
+
+def get_nclosest_config(analysis_cfg: AnalysisConfig, time_dim: str) -> NClosestConfig:
+    return NClosestConfig(
+        ac_days=analysis_cfg.autocorr_days,
+        calc_months=analysis_cfg.calc_months,
+        nb_closest=analysis_cfg.nb_closest,
+        rolling_periods=analysis_cfg.rolling_periods,
+        quantiles=analysis_cfg.quantiles,
+        time_dim=time_dim,
+    )
+
+class NClosestCalc:
+
+    def __init__(
+            self,
+            series_obs: xr.DataArray,
+            config: NClosestConfig,
+            xconfig: XConfig,
+            dist_func: DistanceFunction,
+            output_dir: str = "./outputs",
+        ) -> None:
+        self.series_obs = series_obs
+        self.config = config
+        self.xconfig = xconfig
+        self.n_q = len(config.quantiles)
+        self.n_r = len(config.rolling_periods)
+        self.time_dim = config.time_dim
+        self.dist_func = dist_func
+        self.output_dir = output_dir
+
+    def _calculate_autocorrelation(self, series_obs_rolling: xr.DataArray) -> xr.DataArray:
+        ac_values = calculate_autocorrelation(
+            series_obs_rolling, self.time_dim, self.config.ac_days
+        )
+        return xr.DataArray(
+            ac_values, 
+            dims=[self.xconfig.lag], 
+            coords={self.xconfig.lag: np.arange(self.config.ac_days)},
+            name="autocorrelation"
+        )
+
+    def _calculate_closest_neighbors(
+            self,
+            series_obs_rolling: xr.DataArray,
+            q_array: xr.DataArray,
+            spacing: int,
+        ) -> xr.DataArray:
+        q_list = [
+            calculate_closest_neighbors(
+                series_obs_rolling,
+                float(q_array.sel({self.xconfig.quantile: q})),
+                spacing,
+                self.time_dim,
+                self.config.nb_closest,
+                self.dist_func,
+            ).expand_dims({self.xconfig.quantile: [q]})
+            for q in q_array[self.xconfig.quantile].values
+        ]
+        return xr.concat(q_list, dim=self.xconfig.quantile, join="outer")
+
+    def _calculate_quantiles(self, series_obs_rolling: xr.DataArray) -> xr.DataArray:
+        q_values = calculate_quantiles(
+            series_obs_rolling, self.config.quantiles
+        )
+        return xr.DataArray(
+            q_values, 
+            dims=[self.xconfig.quantile], 
+            coords={self.xconfig.quantile: self.config.quantiles},
+            name="quantile_threshold"
+        )
+
+    def calculate(self, *, save: bool = True) -> None:
+        ac_list, qa_list, nb_list = [], [], []
+
+        for i, r in enumerate(self.config.rolling_periods):
+            spacing = 15 if r <= 20 else 30
+            
+            series_obs_rolling = calculate_rolling(self.series_obs, self.time_dim, r)
+            series_obs_rolling_filtered = filter_by_months(
+                series_obs_rolling, self.time_dim, self.config.calc_months
+            )
+
+            ac_da = self._calculate_autocorrelation(series_obs_rolling).expand_dims({self.xconfig.rolling_period: [r]})
+            qa_da = self._calculate_quantiles(series_obs_rolling_filtered).expand_dims({self.xconfig.rolling_period: [r]})
+            nb_da = self._calculate_closest_neighbors(
+                series_obs_rolling_filtered, qa_da, spacing
+            ).expand_dims({self.xconfig.rolling_period: [r]})
+
+            ac_list.append(ac_da)
+            qa_list.append(qa_da)
+            nb_list.append(nb_da)
+
+        self.results_ac = xr.concat(ac_list, dim=self.xconfig.rolling_period, join="outer")
+        self.results_qa = xr.concat(qa_list, dim=self.xconfig.rolling_period, join="outer")
+        self.results_nb = xr.concat(nb_list, dim=self.xconfig.rolling_period, join="outer")

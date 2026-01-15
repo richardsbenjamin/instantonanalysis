@@ -1,0 +1,11 @@
+defaults:
+    - _base_var
+
+name: "t2m"
+alias: "t2m"
+offset: -273.15
+unit: "°C"
+contour_levels: [10, 32, 2]
+data_path: "t2m.nc"
+climate_mean_path: "t2m_mean2.nc"
+climate_var_path: "t2m_var2.nc"

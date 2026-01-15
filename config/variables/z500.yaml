@@ -1,0 +1,11 @@
+defaults:
+    - _base_var
+
+name: "z500"
+alias: "z500"
+offset: 0
+unit: "hPa"
+contour_levels: [10, 32, 2]
+data_path: "z500.nc"
+climate_mean_path: "z500_mean.nc"
+climate_var_path: "z500_variance.nc"
