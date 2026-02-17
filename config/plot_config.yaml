@@ -1,0 +1,25 @@
+defaults:
+  - /variables@variables.t2m: t2m
+  - /variables@variables.z500: z500
+  - /locations@locations.test_city: city
+  - _self_
+
+paths:
+  data_root: "./data"
+  filenames: ["closest_neighbours", "series_obs", "composite_anomalies", "normalised_var_hat"]
+  results_root: "./outputs"
+
+analysis:
+  rolling_periods: [1, 5]
+  select_months: [6, 8]
+  quantiles: [0.75, 0.95, 0.99, 0.999]
+
+xarray:
+  time_dim: "time"
+  lon_dim: "lon"
+  lat_dim: "lat"
+  rolling_period: "rolling_period"
+  quantile: "quantiles" # plural to not confuse with the xarray quantile function
+  lag: "lag"
+  event: "event"
+  

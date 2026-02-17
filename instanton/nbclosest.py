@@ -15,11 +15,11 @@ from instantonanalysis.instanton.utils import (
     create_folder,
     filter_by_months,
 )
-from instantonanalysis.instanton.schema import NClosestConfig
+from instantonanalysis.instanton.schemas import NClosestConfig
 
 if TYPE_CHECKING:
     from instantonanalysis.instanton._typing import DistanceFunction
-    from instantonanalysis.instanton.schema import AnalysisConfig
+    from instantonanalysis.instanton.schemas import AnalysisConfig
 
 
 def get_nclosest_config(analysis_cfg: AnalysisConfig, time_dim: str) -> NClosestConfig:
@@ -40,7 +40,6 @@ class NClosestCalc:
             config: NClosestConfig,
             xconfig: XConfig,
             dist_func: DistanceFunction,
-            output_dir: str = "./outputs",
         ) -> None:
         self.series_obs = series_obs
         self.config = config
@@ -49,7 +48,6 @@ class NClosestCalc:
         self.n_r = len(config.rolling_periods)
         self.time_dim = config.time_dim
         self.dist_func = dist_func
-        self.output_dir = output_dir
 
     def _calculate_autocorrelation(self, series_obs_rolling: xr.DataArray) -> xr.DataArray:
         ac_values = calculate_autocorrelation(

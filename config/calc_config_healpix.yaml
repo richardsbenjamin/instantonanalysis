@@ -1,0 +1,33 @@
+defaults:
+  - locations: paris
+  - spatial: healpix
+  - /locations@locations.north_america: north_america
+  - /variables@variables.t2m: t2m
+  - /variables@variables.z500: z500
+  - _self_
+  
+nside: 128
+variables: {}
+na_box: ${healpix_from_config:${nside},${locations.north_america.box}}
+  
+paths:
+  data_root: "./data"
+  results_root: "./healpix/outputs"
+  auto_correlation: "auto_correlation.nc"
+  closest_neighbours: "closest_neighbours.nc"
+  quantile_threshold: "quantile_threshold.nc"
+  series_obs: "series_obs.nc"
+  composite_anomalies: "composite_anomalies.nc"
+  normalised_var_tilde: "normalised_var_tilde.nc"
+  weighted_var_tilde: "weighted_var_tilde.nc"
+  normalised_var_hat: "normalised_var_hat.nc"
+
+analysis:
+  autocorr_days: 31
+  calc_months_init: [5, 9]
+  calc_months: [6, 8]
+  dist_func: "squared_error"
+  nb_closest: 50
+  rolling_periods: [1, 5]
+  quantiles: [0.75, 0.95, 0.99, 0.999]
+

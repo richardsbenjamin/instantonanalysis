@@ -1,9 +1,12 @@
+defaults:
+    - _base_location
+
 name: "test_city"
-output_folder: "/test_city"
+output_folder: "/test_city2"
 box:
   lon_min: 1.25
   lon_max: 3.75
-  lat_max: 50
-  lat_min: 49
-  lon_sys: "CONTINUOUS"
-  lat_sys: "NORTH_SOUTH"
+  lat_min: 50
+  lat_max: 49
+  lon_system: "CONTINUOUS"
+  lat_system: "NORTH_SOUTH"

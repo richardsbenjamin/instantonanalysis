@@ -1,9 +1,12 @@
 defaults:
   - locations: city
+  - spatial: lonlat
+  - /locations@locations.north_america: north_america
   - /variables@variables.t2m: t2m
   - /variables@variables.z500: z500
   - _self_
   
+na_box: 
 variables: {}
 
 paths:
@@ -23,17 +26,6 @@ analysis:
   calc_months_init: [5, 9]
   calc_months: [6, 8]
   dist_func: "squared_error"
-  j_list: [-2, 2]
   nb_closest: 50
   rolling_periods: [1, 5]
   quantiles: [0.75, 0.95, 0.99, 0.999]
-
-xarray:
-  time_dim: "time"
-  lon_dim: "lon"
-  lat_dim: "lat"
-  rolling_period: "rolling_period"
-  quantile: "quantiles" # plural as to not be confused with the quantile function
-  lag: "lag"
-  event: "event"
-  

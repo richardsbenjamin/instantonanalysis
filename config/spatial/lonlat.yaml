@@ -1,0 +1,17 @@
+# @package _global_
+defaults:
+    - _base_spatial
+
+xconfig:
+  _target_: instantonanalysis.instanton.schemas.xconfig.XConfigLonLat
+  lon_dim: "lon"
+  lat_dim: "lat"
+
+box:
+  _target_: instantonanalysis.instanton.schemas.box.lonlat.LonLatBox
+  lon_min: ${locations.box.lon_min}
+  lon_max: ${locations.box.lon_max}
+  lat_min: ${locations.box.lat_min}
+  lat_max: ${locations.box.lat_max}
+  lon_system: ${locations.box.lon_system}
+  lat_system: ${locations.box.lat_system}

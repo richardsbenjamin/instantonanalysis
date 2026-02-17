@@ -1,9 +1,12 @@
+defaults:
+    - _base_location
+
 name: "paris"
 output_folder: "/paris"
 box:
   lon_min: 1.25
   lon_max: 3.75
-  lat_max: 50
-  lat_min: 49
+  lat_min: 50
+  lat_max: 49
   lon_sys: "CONTINUOUS"
   lat_sys: "NORTH_SOUTH"

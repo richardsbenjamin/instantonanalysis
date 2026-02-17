@@ -16,8 +16,9 @@ if TYPE_CHECKING:
     from typing import Optional
 
     from instantonanalysis.instanton._typing import DistanceFunction, XArray
-    from instantonanalysis.instanton.lonlat import LonLatBox
-    from instantonanalysis.instanton.schema import VariableConfig, XConfig
+    from instantonanalysis.instanton.schemas.box.ibox import IBox
+    from instantonanalysis.instanton.schemas import VariableConfig
+    from instantonanalysis.instanton.schemas.xconfig import XConfig
 
 
 def calculate_autocorrelation(
@@ -90,7 +91,7 @@ def calculate_mean(
     return dataset.mean(dim).values
 
 def calculate_mean_anomaly(
-        mean: np.ndarray, 
+        mean: np.ndarray,   
         climate_mean: np.ndarray, 
         climate_var: np.ndarray
     ) -> np.ndarray:
@@ -100,13 +101,13 @@ def calculate_observable(
         dataset: XArray,
         var: str,
         calc_months: tuple[int, int],
-        lon_lat_box: LonLatBox,
+        box: IBox,
         xconfig: XConfig,
     ) -> xr.DataArray: 
-    res = filter_by_lon_lat(dataset, xconfig.lon_dim, xconfig.lat_dim, lon_lat_box)
+    res = box.select(dataset, dims=xconfig.spatial_dims)
     res = filter_by_months(res, xconfig.time_dim, calc_months)
     return (
-        res.mean(dim=[xconfig.lat_dim, xconfig.lon_dim])
+        res.mean(dim=xconfig.spatial_dims)
         .astype(np.float64)
     )
 

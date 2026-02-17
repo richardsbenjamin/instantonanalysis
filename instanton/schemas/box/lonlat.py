@@ -2,23 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
-from instantonanalysis.instanton.schema import LocationConfig
-
-
-LAT_NAMES = {'lat', 'latitude'}
-LON_NAMES = {'lon', 'longitude'}
-
-
-def get_lon_lat_box(loc_cfg: LocationConfig) -> LonLatBox:
-    return LonLatBox(
-        loc_cfg.box.lon_min,
-        loc_cfg.box.lon_max,
-        loc_cfg.box.lat_max,
-        loc_cfg.box.lat_min,
-        LongitudeSystem[loc_cfg.box.lon_sys],
-        LatitudeSystem[loc_cfg.box.lat_sys]
-    )
+from instantonanalysis.instanton.schemas.box.ibox import IBox
 
 
 class LongitudeSystem(Enum):
@@ -34,7 +20,7 @@ class LatitudeSystem(Enum):
 
 
 @dataclass
-class LonLatBox:
+class LonLatBox(IBox):
     """Dataclass for storing longitude and latitude coordinates with explicit longitude system."""
     lon_min: float
     lon_max: float
@@ -42,17 +28,23 @@ class LonLatBox:
     lat_max: float
     lon_system: LongitudeSystem = LongitudeSystem.EAST_WEST
     lat_system: LatitudeSystem = LatitudeSystem.NORTH_SOUTH
-    xconfig: Optional[XConfig] = None
+
+    _possible_names = {
+        "Longitude": ["lon", "longitude", "lons"],
+        "Latitude": ["lat", "latitude", "lats"]
+    }
     
     def __post_init__(self):
         """Basic coordinate validation."""
         # Longitude validation
-        if self.lon_system == LongitudeSystem.EAST_WEST:
+        if LongitudeSystem[self.lon_system] == LongitudeSystem.EAST_WEST:
             if not (-180 <= self.lon_min <= 180 and -180 <= self.lon_max <= 180):
                 raise ValueError("Longitudes must be between -180 and 180 for EAST_WEST system")
-        else:
+        elif LongitudeSystem[self.lon_system] == LongitudeSystem.CONTINUOUS:
             if not (0 <= self.lon_min <= 360 and 0 <= self.lon_max <= 360):
                 raise ValueError("Longitudes must be between 0 and 360 for CONTINUOUS system")
+        else:
+            raise ValueError("Invalid longitude system")
 
         if self.lon_min > self.lon_max:
             raise ValueError("lon_min cannot be greater than lon_max")
@@ -61,12 +53,19 @@ class LonLatBox:
         if not (-90 <= self.lat_min <= 90 and -90 <= self.lat_max <= 90):
             raise ValueError("Latitudes must be between -90 and 90")
         
-        if self.lat_system == LatitudeSystem.NORTH_SOUTH:
+        if LatitudeSystem[self.lat_system] == LatitudeSystem.NORTH_SOUTH:
             if self.lat_min < self.lat_max:
                 raise ValueError("In NORTH_SOUTH system, lat_min (south) cannot be less than lat_max (north)")
-        else:
+        elif LatitudeSystem[self.lat_system] == LatitudeSystem.SOUTH_NORTH:
             if self.lat_min > self.lat_max:
                 raise ValueError("In SOUTH_NORTH system, lat_min (north) cannot be greater than lat_max (south)")
+        else:
+            raise ValueError("Invalid latitude system")
+
+    def _check_bounds(self, ds: xrArray, dims: Tuple[str, str]):
+        lon_name, lat_name = dims
+        self._check_lon_bounds(ds[lon_name])
+        self._check_lat_bounds(ds[lat_name])
 
     def _check_lon_bounds(self, lon_coord: xr.DataArray):
         lons = lon_coord.values
@@ -85,22 +84,6 @@ class LonLatBox:
                 f"Latitude box [{self.lat_min}, {self.lat_max}] is outside "
                 f"dataset bounds [{lats.min():.2f}, {lats.max():.2f}]"
             )
-
-    def _find_coord_names(self, ds: xr.Dataset | xr.DataArray):
-        found_coords = set(ds.coords) | set(ds.dims)
-        
-        lon_name = next((c for c in LON_NAMES if c in found_coords), None)
-        lat_name = next((c for c in LAT_NAMES if c in found_coords), None)
-        
-        if not lon_name:
-            raise ValueError(
-                "Longitude coordinate not found. Expected one of {LON_NAMES}. Found: {list(ds.coords)}"
-            )
-        if not lat_name:
-            raise ValueError(
-                "Latitude coordinate not found. Expected one of {LAT_NAMES}. Found: {list(ds.coords)}"
-            )
-        return lon_name, lat_name
 
     def add_cyclic_point(self, ds: xrArray, xconfig: XConfig | None = None) -> xrArray:
         lon_name, _ = self.get_names(ds, xconfig)
@@ -124,6 +107,18 @@ class LonLatBox:
             attrs=ds.attrs
         )
 
+    @staticmethod
+    def convert_lon_to_continuous(lons: List, lon_system: LongitudeSystem) -> List:
+        if LongitudeSystem[lon_system] == LongitudeSystem.EAST_WEST:
+            return [(lon + 360) % 360 for lon in lons]
+        return lons
+        
+    @staticmethod
+    def convert_lat_to_north_south(lats: List, lat_system: LatitudeSystem) -> List:
+        if LatitudeSystem[lat_system] == LatitudeSystem.SOUTH_NORTH:
+            return [-lat for lat in lats]
+        return lats
+
     def enforce_coords(self, ds: xrArray, xconfig: Optional[XConfig] = None) -> xrArray:
         res = ds.copy()
         lon_name, lat_name = self.get_names(res, xconfig)
@@ -142,35 +137,24 @@ class LonLatBox:
             res = res.isel({lat_name: slice(None, None, -1)})
             
         return res
-        
-    def extract(self, ds: xrArray, xconfig: XConfig | None = None) -> xrArray:
-        res = self.enforce_coords(ds, xconfig)
-        
-        lon_name, lat_name = self.get_names(res, xconfig)
 
-        self._check_lon_bounds(res[lon_name])
-        self._check_lat_bounds(res[lat_name])
+    def select(self, series: xr.DataArray, dims: Tuple[str, str]) -> xr.DataArray:
+        lon_dim, lat_dim = dims
+        return series.sel({
+            lat_dim: slice(*self.lat_min_max),
+            lon_dim: slice(*self.lon_min_max),
+        })
 
-        try:
-            subset = res.sel({
-                lat_name: slice(self.lat_min, self.lat_max),
-                lon_name: slice(self.lon_min, self.lon_max)
-            })
-            
-            if subset.sizes[lat_name] == 0 or subset.sizes[lon_name] == 0:
-                raise ValueError(f"Extraction resulted in an empty dataset for box: {self}")
-                
-            return subset
-            
-        except Exception as e:
-            raise RuntimeError(f"Error during spatial extraction: {str(e)}")
-
-    def get_names(self, ds: xrArray, xconfig: Optional[XConfig] = None) -> Tuple[str, str]:
-        if xconfig:
-            return xconfig.lon_dim, xconfig.lat_dim
-        if self.xconfig:
-            return self.xconfig.lon_dim, self.xconfig.lat_dim
-        return self._find_coord_names(ds)
+    @property
+    def attributes(self) -> tuple:
+        return (
+            self.lon_min,
+            self.lon_max,
+            self.lat_min,
+            self.lat_max,
+            self.lon_system,
+            self.lat_system
+        )
 
     @property
     def lon_min_max(self) -> tuple:

@@ -13,8 +13,8 @@ from instantonanalysis.instanton.lonlat import (
     LatitudeSystem,
     LonLatBox,
     LongitudeSystem,
+    get_lon_lat_box,
 )
-from instantonanalysis.instanton.schemas.box.healpix import HealPixBox
 from instantonanalysis.instanton.nbclosest import NClosestCalc, get_nclosest_config
 from instantonanalysis.instanton.utils import (
     build_event_cube,
@@ -44,16 +44,14 @@ na_box = LonLatBox(
     lat_system=LatitudeSystem.SOUTH_NORTH,
 )
 
-
 if __name__ == "__main__":
     logger.info("Loading config")
     cfg = load_config("calc_config")
-    
     data_root_path = Path(cfg.paths.data_root)
-    spatial_box = instantiate(cfg.locations.box)
+    lon_lat_box = get_lon_lat_box(cfg.locations)
     output_dir = Path(cfg.paths.results_root + cfg.locations.output_folder)
     output_dir.mkdir(parents=True, exist_ok=True)
-    xconfig = instantiate(cfg.xarray)
+    xconfig = cfg.xarray
 
     results_obs = []
     results_ac = []
@@ -80,7 +78,7 @@ if __name__ == "__main__":
         datasets[var_cfg.name]["dataset"],
         var=var_cfg.name,
         calc_months=cfg.analysis.calc_months_init,
-        lon_lat_box=spatial_box,
+        lon_lat_box=lon_lat_box,
         xconfig=xconfig,
     )
 

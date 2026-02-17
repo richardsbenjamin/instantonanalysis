@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+    - _base_spatial
+
+xconfig:
+  _target_: instantonanalysis.instanton.schemas.xconfig.XConfigHealPix
+  face_dim: "face"
+  height_dim: "height"
+  width_dim: "width"
+
+box: ${healpix_from_config:${nside},${locations.box}}

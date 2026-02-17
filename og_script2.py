@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from cartopy.util import add_cyclic_point
-import sklearn.metrics.pairwise as skmp
 from scipy.stats import ttest_1samp, ks_2samp
 import scipy.stats
 import sys, os
