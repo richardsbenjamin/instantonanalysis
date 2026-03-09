@@ -57,7 +57,7 @@ def resolve_healpix_from_lonlat(
     }
 
 def resolve_latlon_from_cfg(cfg_box: dict | OmegaConf) -> dict:
-    return LonLatBox(
+    lb = LonLatBox(
         lon_min=cfg_box["lon_min"],
         lon_max=cfg_box["lon_max"],
         lat_min=cfg_box["lat_min"],
@@ -65,6 +65,10 @@ def resolve_latlon_from_cfg(cfg_box: dict | OmegaConf) -> dict:
         lon_system=cfg_box.get("lon_sys") or cfg_box.get("lon_system"),
         lat_system=cfg_box.get("lat_sys") or cfg_box.get("lat_system"),
     )
+    from dataclasses import asdict
+    d = asdict(lb)
+    d["_target_"] = "instantonanalysis.instanton.schemas.box.lonlat.LonLatBox"
+    return d
 
 resolvers = {
     "healpix_from_lonlat": resolve_healpix_from_lonlat,

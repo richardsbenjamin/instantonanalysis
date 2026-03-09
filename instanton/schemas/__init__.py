@@ -21,7 +21,7 @@ class Config:
     location: LocationConfig = MISSING
     paths: PathConfig = field(
         default_factory=lambda: PathConfig(
-            data_root="./data", input_data="", results_root="./outputs"
+            data_root="./data", data_file="", input_data="", results_root="./outputs"
         )
     )
     variable: VariableConfig = MISSING

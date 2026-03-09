@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 from typing import List, Optional
 
@@ -11,8 +12,7 @@ from pandas import Timedelta
 from hydra import initialize, compose
 from hydra.core.config_store import ConfigStore
 
-import instantonanalysis.instanton.resolvers
-
+import instantonanalysis.hydra_logic
 from instantonanalysis.instanton._typing import TYPE_CHECKING
 from instantonanalysis.instanton.metrics import DISTANCE_FUNCTIONS
 from instantonanalysis.instanton.schemas.box.lonlat import LonLatBox
@@ -28,53 +28,55 @@ if TYPE_CHECKING:
     from instantonanalysis.instanton.xconfig import XConfig
 
 
+def _get_r_lags(r: int) -> np.ndarray:
+    return np.arange(-r // 2 + 1, r // 2 + 1)
+
 def build_event_cube(
         data: xr.Dataset, 
         var_cfg: VariableConfig, 
-        neighbors_da: xr.Dataset, 
+        event_dates: xr.Dataset, 
         xconfig: XConfig,
     ) -> xr.Dataset:
     time_dim = xconfig.time_dim
-    r_results = []
+    lag_dim = xconfig.lag
+    event_dim = xconfig.event
+    rolling_dim = xconfig.rolling_period
+    quantile_dim = xconfig.quantile
 
-    max_r = int(neighbors_da[xconfig.rolling_period].max())
+    rolling_values = event_dates[rolling_dim]
+
+    # Transform data before any other operations 
+    data = transform_data(data, var_cfg)
+
+    # Get max lags across all r
+    max_r = int(rolling_values.max())
     global_lags = np.arange(-max_r // 2 + 1, max_r // 2 + 1)
+    lag_da = xr.DataArray(global_lags, dims=[lag_dim], coords={lag_dim: global_lags})
 
-    for r_val in neighbors_da[xconfig.rolling_period].values:
-        j_list = list(range(-r_val // 2 + 1, r_val // 2 + 1))
-        q_results = []
-        r_slice = neighbors_da.sel({xconfig.rolling_period: r_val})
+    # dropna is not lazy but event_dates should already have been computed
+    event_dates = event_dates.dropna(dim=time_dim).rename({time_dim: event_dim})
 
-        for q_val in r_slice[xconfig.quantile].values:
-            dates = (r_slice
-                .sel({xconfig.quantile: q_val})
-                .dropna(time_dim)
-                .sortby(time_dim, ascending=False)
-                [time_dim].values
-            )
-            event_windows = []
-            for d in dates:
-                window = select_data(data, d, j_list[0], j_list[-1])
-                window = transform_data(window, var_cfg)
-                
-                if window.sizes[time_dim] == len(j_list):
-                    window = window.rename({time_dim: xconfig.lag}).assign_coords({xconfig.lag: j_list})
-                    event_windows.append(window)
-            
-            q_results.append(
-                concat(
-                    event_windows,
-                    xconfig.event,
-                    assign_coords={xconfig.event: np.arange(len(event_windows))},
-                    **{xconfig.quantile: [q_val]}
-                ).reindex({xconfig.lag: global_lags})
-            )
-        r_results.append(
-            concat(q_results, xconfig.quantile, **{xconfig.rolling_period: [r_val]}),
-        )
-    return concat(r_results, xconfig.rolling_period).transpose(
-        xconfig.rolling_period, xconfig.quantile, xconfig.lag,
-        xconfig.event, xconfig.lat_dim, xconfig.lon_dim,
+    # Create lag times across (rolling_period, quantile, event, lag)
+    target_times = xr.apply_ufunc(
+        lambda dates, lag: dates + timedelta(days=int(lag)),
+        event_dates,
+        lag_da,
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[event_dates.dtype],
+    )
+    cube = data.sel({time_dim: target_times}, method='nearest')
+
+    # Mask to filter our maximum lags (not all rolling periods go to max lag)
+    lag_mask = xr.DataArray(
+        np.stack([np.isin(global_lags, _get_r_lags(r)) for r in rolling_values]),
+        dims=[rolling_dim, lag_dim],
+        coords={rolling_dim: rolling_values, lag_dim: global_lags}
+    )
+    cube = cube.where(lag_mask)
+    return cube.transpose(
+        rolling_dim, quantile_dim, lag_dim, 
+        event_dim, *xconfig.spatial_dims
     )
 
 def concat(
@@ -130,8 +132,7 @@ def get_distance_function(dist_func: str) -> DistanceFunction:
 def get_df_array(event_cube: xr.DataArray, count_dim: str, max_dims: list[str]) -> xr.DataArray:
     # degrees of freedom
     df = event_cube.count(dim=count_dim)
-    return df.max(dim=max_dims).compute() - 1
-
+    return df.max(dim=max_dims) - 1
 
 def load_config(
         config_name: str = "config", 
@@ -152,10 +153,10 @@ def read_dataset(path: str, cftime: bool = True) -> xr.Dataset:
     dataset = xr.open_dataset(path, decode_times=time_coder)
     return dataset
 
-def select_data(data: xr.Dataset, d, j_begin: int, j_end: int) -> None:
-    return data.sel(
-        time=slice(str(d+Timedelta(days=j_begin)), str(d+Timedelta(days=j_end)))
-    )
+def select_data(data: xr.Dataset, d, j_begin: int, j_end: int, time_dim: str) -> None:
+    return data.sel({
+        time_dim: slice(str(d+Timedelta(days=j_begin)), str(d+Timedelta(days=j_end)))
+    })
 
 def transform_data(
         data: xr.Dataset, 

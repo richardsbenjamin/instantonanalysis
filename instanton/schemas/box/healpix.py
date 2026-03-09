@@ -75,7 +75,7 @@ class HealPixBox(IBox):
             
         return HealPixBox(f_list=f_list, h_list=y_list, w_list=x_list)
 
-    def _check_bounds(self, ds: xrArray, dims: Tuple[str, str, str]):
+    def _check_bounds(self, ds: xrArray, dims: Tuple[str, ...]):
         """Check if requested indices exist in the dataset."""
         face_dim, h_dim, w_dim = dims
         
@@ -101,10 +101,18 @@ class HealPixBox(IBox):
 
     def select(self, series: xr.DataArray, dims: Tuple[str, str, str]) -> xr.DataArray:
         """The 3D implementation of the selection logic."""
-        face_dim, h_dim, w_dim = dims
+        f_dim, h_dim, w_dim = dims
         return series.sel({
-            face_dim: self.f_list,
-            h_dim: self.h_list,
-            w_dim: self.w_list
+            f_dim: xr.DataArray(self.f_list, dims="points"),
+            h_dim: xr.DataArray(self.h_list, dims="points"),
+            w_dim: xr.DataArray(self.w_list, dims="points")
         })
+
+    def spatial_mean(
+            self,
+            da: xr.DataArray, 
+            xconfig: Optional[XConfig] = None
+        ) -> np.ndarray:
+        da = self.extract(da, xconfig=xconfig, dims=("points",))
+        return da.mean(dim="points")
 

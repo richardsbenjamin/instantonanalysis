@@ -6,13 +6,18 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-RUN="$1"
-VERBOSE_MODE=false
-
-if [[ "$2" == "-v" || "$2" == "-verbose" ]]; then
-    VERBOSE_MODE=true
+if [ -z "$2" ]; then
+    echo "Error: No config file provided."
+    echo "Usage: ./run.sh <run_name> <config_file>"
+    exit 1
 fi
 
+RUN="$1"
+CONFIG_FILE="$2"
+
+if [[ "$3" == "-v" || "$3" == "-verbose" ]]; then
+    VERBOSE_MODE=true
+fi
 
 # Local paths
 HOME_DIR="/home/benjamin"
@@ -24,19 +29,16 @@ if [ "$VERBOSE_MODE" = true ]; then
     echo "Running in Verbose Mode (printing to console)..."
 else
     OUTPUT_FILE="${OUTPUT_DIR}/${RUN}.out"
+    if [ -f ${OUTPUT_FILE} ]; then
+        rm ${OUTPUT_FILE}
+    fi
 fi
 
 #############################################################
 cd ${MODULE_DIR}
 export PYTHONPATH=${HOME_DIR}
 
-# Delete the output file if it already exists
-if [ -f ${OUTPUT_FILE} ]; then
-    rm ${OUTPUT_FILE}
-fi
-
-RUN_CMD="python scripts/${RUN}.py"
-${RUN_CMD}
+RUN_CMD="python scripts/${RUN}.py --config-name ${CONFIG_FILE}"
 
 # If output file is given, redirect output
 if [[ -n "${OUTPUT_FILE}" ]]; then

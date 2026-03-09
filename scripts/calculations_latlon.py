@@ -3,18 +3,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import xarray as xr
+from hydra.utils import instantiate
 
 from instantonanalysis.instanton.analysis import (
     calculate_chi_mask,
     calculate_observable,
     calculate_weighted_spatial_mean,
 )
-from instantonanalysis.instanton.lonlat import (
-    LatitudeSystem,
-    LonLatBox,
-    LongitudeSystem,
-)
-from instantonanalysis.instanton.schemas.box.healpix import HealPixBox
 from instantonanalysis.instanton.nbclosest import NClosestCalc, get_nclosest_config
 from instantonanalysis.instanton.utils import (
     build_event_cube,
@@ -23,6 +18,7 @@ from instantonanalysis.instanton.utils import (
     load_config,
     read_dataset,
 )
+from instantonanalysis.utils.parsers import get_calc_args
 
 if TYPE_CHECKING:
     from instantonanalysis.instanton.nbclosest import NClosestConfig
@@ -35,25 +31,18 @@ CHUNKS = {
     'lat': 65, 
     'lon': 180
 }
-na_box = LonLatBox(
-    lon_min=-80,
-    lon_max=50,
-    lat_min=22.5,
-    lat_max=70,
-    lon_system=LongitudeSystem.EAST_WEST,
-    lat_system=LatitudeSystem.SOUTH_NORTH,
-)
-
 
 if __name__ == "__main__":
     logger.info("Loading config")
-    cfg = load_config("calc_config")
+    args = get_calc_args()
+    cfg = load_config(args.config_name, args.overrides)
     
     data_root_path = Path(cfg.paths.data_root)
-    spatial_box = instantiate(cfg.locations.box)
+    na_box = instantiate(cfg.na_box)
+    spatial_box = instantiate(cfg.box)
     output_dir = Path(cfg.paths.results_root + cfg.locations.output_folder)
     output_dir.mkdir(parents=True, exist_ok=True)
-    xconfig = instantiate(cfg.xarray)
+    xconfig = instantiate(cfg.xconfig)
 
     results_obs = []
     results_ac = []
@@ -80,19 +69,19 @@ if __name__ == "__main__":
         datasets[var_cfg.name]["dataset"],
         var=var_cfg.name,
         calc_months=cfg.analysis.calc_months_init,
-        lon_lat_box=spatial_box,
+        spatial_box=spatial_box,
         xconfig=xconfig,
     )
 
     logger.info("Calculating nclosest")
     nclosest_config = get_nclosest_config(
         analysis_cfg=cfg.analysis,
-        time_dim=cfg.xarray.time_dim,
+        time_dim=xconfig.time_dim,
     )
     nclosest_calc = NClosestCalc(
         series_obs=series_obs,
         config=nclosest_config,
-        xconfig=cfg.xarray,
+        xconfig=xconfig,
         dist_func=get_distance_function(cfg.analysis.dist_func),
     )
     nclosest_calc.calculate()

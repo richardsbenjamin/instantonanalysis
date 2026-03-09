@@ -6,7 +6,7 @@ defaults:
   - /variables@variables.z500: z500
   - _self_
   
-na_box: 
+na_box: ${latlon_from_cfg:${locations.north_america.box}}
 variables: {}
 
 paths:

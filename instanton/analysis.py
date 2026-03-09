@@ -36,7 +36,7 @@ def calculate_autocorrelation(
 
 def calculate_chi_mask(
         var_ratio: xr.DataArray,
-        df: int,
+        df: xr.DataArray,
         confidence_level: float = 0.05,
     ) -> xr.DataArray:
     test_statistic = df * var_ratio
@@ -82,7 +82,14 @@ def calculate_closest_neighbors(
         return xr.DataArray([], coords={time_dim: np.array([], dtype='datetime64[ns]')}, dims=(time_dim,))
         
     yearly_results = xr.concat(yearly_results, dim=time_dim)
-    return yearly_results.sortby(dist_func(yearly_results, obs_q))[:nb_closest]
+    result = yearly_results.sortby(dist_func(yearly_results, obs_q))[:nb_closest]
+
+    n = len(result)
+    return result, xr.DataArray(
+        result[time_dim].values,
+        dims=[time_dim],
+        coords={time_dim: np.arange(n)},
+    )
 
 def calculate_mean(
         dataset: xr.Dataset, 
@@ -99,20 +106,23 @@ def calculate_mean_anomaly(
 
 def calculate_observable(
         dataset: XArray,
-        var: str,
         calc_months: tuple[int, int],
-        box: IBox,
+        spatial_box: IBox,
         xconfig: XConfig,
     ) -> xr.DataArray: 
-    res = box.select(dataset, dims=xconfig.spatial_dims)
+    res = spatial_box.select(dataset, dims=xconfig.spatial_dims)
     res = filter_by_months(res, xconfig.time_dim, calc_months)
     return (
-        res.mean(dim=xconfig.spatial_dims)
+        res.mean(dim="points")
         .astype(np.float64)
     )
 
-def calculate_quantiles(series_obs: xr.DataArray, quantiles: list[float]) -> list[float]:
-    return [series_obs.quantile(q=q).values for q in quantiles]
+def calculate_quantiles(
+        series_obs: xr.DataArray,
+        quantiles: list[float],
+        time_dim: str
+    ) -> xr.DataArray:
+    return series_obs.quantile(q=quantiles, dim=time_dim)
 
 def calculate_rolling(series: xr.DataArray, time_dim: str, rol_days: int) -> xr.DataArray:
     return series.rolling(**{time_dim: rol_days, "center": True}).mean()
@@ -124,22 +134,3 @@ def calculate_var(
     ) -> np.ndarray:
     return dataset.var(dim).values
 
-def calculate_weighted_spatial_mean(
-        da: xr.DataArray, 
-        box: Optional[LonLatBox] = None, 
-        xconfig: Optional[XConfig] = None
-    ) -> np.ndarray:
-    if xconfig:
-        lon_name, lat_name = xconfig.lon_dim, xconfig.lat_dim
-    elif box:
-        lon_name, lat_name = box.get_names(da, xconfig=None)
-    else:
-        raise ValueError(
-            "Coordinate names could not be resolved. "
-            "Please provide either an XConfig or a LonLatBox."
-        )
-    if box:
-        da = box.extract(da, xconfig=xconfig)
-    weights = np.cos(np.deg2rad(da[lat_name]))
-    weights.name = "weights"
-    return da.weighted(weights).mean((lon_name, lat_name))

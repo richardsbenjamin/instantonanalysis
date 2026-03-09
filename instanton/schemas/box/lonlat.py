@@ -28,6 +28,7 @@ class LonLatBox(IBox):
     lat_max: float
     lon_system: LongitudeSystem = LongitudeSystem.EAST_WEST
     lat_system: LatitudeSystem = LatitudeSystem.NORTH_SOUTH
+    _target_: str = "instantonanalysis.instanton.schemas.box.lonlat.LonLatBox"
 
     _possible_names = {
         "Longitude": ["lon", "longitude", "lons"],
@@ -144,6 +145,20 @@ class LonLatBox(IBox):
             lat_dim: slice(*self.lat_min_max),
             lon_dim: slice(*self.lon_min_max),
         })
+
+    def spatial_mean(
+            self,
+            da: xr.DataArray, 
+            xconfig: Optional[XConfig] = None
+        ) -> np.ndarray:
+        if xconfig:
+            lon_name, lat_name = xconfig.lon_dim, xconfig.lat_dim
+        else:
+            lon_name, lat_name = self.get_names(da, xconfig=None)
+        da = self.extract(da, xconfig=xconfig)
+        weights = np.cos(np.deg2rad(da[lat_name]))
+        weights.name = "weights"
+        return da.weighted(weights).mean((lon_name, lat_name))
 
     @property
     def attributes(self) -> tuple:

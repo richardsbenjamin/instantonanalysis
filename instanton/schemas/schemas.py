@@ -33,6 +33,7 @@ class NClosestConfig:
 @dataclass
 class PathConfig:
     data_root: str
+    data_file: str
     input_data: str
     results_root: str
     auto_correlation: Optional[str] = None

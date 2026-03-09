@@ -1,7 +1,7 @@
 defaults:
     - _base_var
 
-name: "t2m"
+name: "t2m0"
 alias: "t2m"
 offset: -273.15
 unit: "°C"

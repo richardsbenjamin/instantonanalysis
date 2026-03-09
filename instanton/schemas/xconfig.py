@@ -13,6 +13,7 @@ class XConfig:
     quantile: Optional[str] = "quantile"
     lag: Optional[str] = "lag"
     event: Optional[str] = "event"
+    chunk_size: Optional[str] = "1GiB"
 
     @property
     def spatial_dims(self) -> Tuple[str, ...]:

@@ -6,13 +6,22 @@ defaults:
   - /variables@variables.z500: z500
   - _self_
   
-nside: 128
-variables: {}
 na_box: ${healpix_from_config:${nside},${locations.north_america.box}}
+nside: 64
+
+variables:
+  t2m:
+    transpose: ["step", "face", "height", "width"]
+  z500:
+    transpose: ["step", "face", "height", "width"]
+
+xconfig:
+  time_dim: "step"
   
 paths:
   data_root: "./data"
-  results_root: "./healpix/outputs"
+  data_file: "atmos_daily_heal.nc"
+  results_root: "./outputs/healpix"
   auto_correlation: "auto_correlation.nc"
   closest_neighbours: "closest_neighbours.nc"
   quantile_threshold: "quantile_threshold.nc"
@@ -30,4 +39,5 @@ analysis:
   nb_closest: 50
   rolling_periods: [1, 5]
   quantiles: [0.75, 0.95, 0.99, 0.999]
+
 

@@ -16,6 +16,10 @@ class IBox(ABC):
     _possible_names: dict[str, List[str]] = {}
     xconfig: Optional[XConfig] = None
 
+    @abstractmethod
+    def _check_bounds(self, ds: xrArray, dims: Tuple[str, ...]) -> None:
+        raise NotImplementedError
+
     def _find_coord_names(self, ds: xrArray) -> Tuple[str, ...]:
         """Discover coordinate names using the _possible_names map."""
         found_coords = set(ds.coords) | set(ds.dims)
@@ -36,14 +40,18 @@ class IBox(ABC):
     def enforce_coords(self, ds: xrArray, xconfig: Optional[XConfig] = None) -> xrArray:
         raise NotImplementedError
 
-    def extract(self, ds: xrArray, xconfig: Optional[Any] = None) -> xrArray:
+    def extract(
+            self,
+            ds: xrArray,
+            xconfig: Optional[Any] = None,
+            dims: Optional[Tuple[str, ...]] = None,
+        ) -> xrArray:
         res = self.enforce_coords(ds, xconfig)
-        dims = self.get_names(res, xconfig)
+        _dims = self.get_names(res, xconfig)
 
-        self._check_bounds(res, dims)
-
+        self._check_bounds(res, _dims)
         try:
-            subset = self.select(res, dims)
+            subset = self.select(res, _dims)
             if any(subset.sizes[d] == 0 for d in dims):
                 raise ValueError(f"Extraction resulted in an empty dataset for box: {self}")
             return subset
