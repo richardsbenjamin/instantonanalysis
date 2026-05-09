@@ -19,8 +19,8 @@ xconfig:
   time_dim: "step"
   
 paths:
-  data_root: "./data"
-  data_file: "atmos_daily_heal.nc"
+  data_root: "/data"
+  data_file: "atmos_hpx64_100year.zarr"
   results_root: "./outputs/healpix"
   auto_correlation: "auto_correlation.nc"
   closest_neighbours: "closest_neighbours.nc"

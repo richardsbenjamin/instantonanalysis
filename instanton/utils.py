@@ -56,16 +56,42 @@ def build_event_cube(
     # dropna is not lazy but event_dates should already have been computed
     event_dates = event_dates.dropna(dim=time_dim).rename({time_dim: event_dim})
 
-    # Create lag times across (rolling_period, quantile, event, lag)
+    # Compute target_times eagerly — it's small (rolling_period × quantile × event × lag)
     target_times = xr.apply_ufunc(
-        lambda dates, lag: dates + timedelta(days=int(lag)),
+        lambda dates, lag: np.datetime64(int(dates), 'ns') + np.timedelta64(int(lag), 'D'),
         event_dates,
         lag_da,
         vectorize=True,
         dask="parallelized",
         output_dtypes=[event_dates.dtype],
     )
-    cube = data.sel({time_dim: target_times}, method='nearest')
+    if hasattr(target_times, 'compute'):
+        target_times = target_times.compute()
+
+    # Instead of data.sel(time=target_times, method='nearest') which requires
+    # the full time axis in memory, find the unique indices we need and load
+    # only those timesteps.
+    time_coords = data[time_dim].values
+    target_flat = target_times.values.ravel()
+    nearest_indices = np.searchsorted(time_coords, target_flat, side='left')
+    # Clamp and pick the closer of the two neighbors
+    nearest_indices = np.clip(nearest_indices, 0, len(time_coords) - 1)
+    left = np.clip(nearest_indices - 1, 0, len(time_coords) - 1)
+    d_left = np.abs(time_coords[left] - target_flat)
+    d_right = np.abs(time_coords[nearest_indices] - target_flat)
+    nearest_indices = np.where(d_left < d_right, left, nearest_indices)
+
+    # Get only the unique indices we need, load that small subset
+    unique_indices, inverse = np.unique(nearest_indices, return_inverse=True)
+    data_subset = data.isel({time_dim: unique_indices}).compute()
+
+    # Map the flat inverse back to the shape of target_times to build the cube
+    idx_into_subset = inverse.reshape(target_times.shape)
+
+    cube = data_subset.isel({time_dim: xr.DataArray(idx_into_subset, dims=target_times.dims)})
+    # Drop the original time coordinate to avoid confusion
+    if time_dim in cube.coords:
+        cube = cube.drop_vars(time_dim)
 
     # Mask to filter our maximum lags (not all rolling periods go to max lag)
     lag_mask = xr.DataArray(
@@ -89,6 +115,17 @@ def concat(
     for k, v in expand_kwargs.items():
         res = res.expand_dims({k: v})
     return res
+
+def convert_timedelta2datetime(dataset: xr.Dataset, xconfig: XConfig) -> xr.Dataset:
+    init_time = dataset["time"].values.astype("datetime64[ns]")
+    steps = dataset[xconfig.time_dim].values 
+
+    valid_times = init_time + steps 
+
+    valid_time_da = xr.DataArray(valid_times, coords={xconfig.time_dim: dataset[xconfig.time_dim]}, dims=[xconfig.time_dim])
+    dataset = dataset.assign_coords({xconfig.time_dim: valid_time_da})
+
+    return dataset
 
 def create_folder(path: str) -> None:
     Path(path).mkdir(parents=True, exist_ok=True)

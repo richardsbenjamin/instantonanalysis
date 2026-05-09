@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dask
+import numpy as np
 import xarray as xr
 from hydra.utils import instantiate
 
@@ -15,6 +16,7 @@ from instantonanalysis.instanton.analysis import (
 from instantonanalysis.instanton.nbclosest import NClosestCalc, get_nclosest_config
 from instantonanalysis.instanton.utils import (
     build_event_cube,
+    convert_timedelta2datetime,
     get_distance_function,
     get_df_array,
     load_config,
@@ -47,7 +49,6 @@ if __name__ == "__main__":
     na_box = instantiate(cfg.na_box)
     spatial_box = instantiate(cfg.box)
     output_dir = Path(cfg.paths.results_root + cfg.locations.output_folder)
-    print(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     vars_list = [var.name for var in cfg.variables.values()]
     xconfig = instantiate(cfg.xconfig)
@@ -66,7 +67,11 @@ if __name__ == "__main__":
     datasets = {}
     climate_mean_in = read_dataset(data_root_path / f"climate_mean_{cfg.paths.data_file}")[vars_list]
     climate_var_in = read_dataset(data_root_path / f"climate_variance_{cfg.paths.data_file}")[vars_list]
-    dataset_in = read_dataset(data_root_path / cfg.paths.data_file)[vars_list]
+    dataset_in = convert_timedelta2datetime(
+        read_dataset(data_root_path / cfg.paths.data_file),
+        xconfig,
+    )[vars_list]
+
     for var_cfg in cfg.variables.values():
         datasets[var_cfg.name] = {
             "dataset": dataset_in[var_cfg.name],
@@ -105,18 +110,41 @@ if __name__ == "__main__":
     for var_cfg in cfg.variables.values():
         logger.info("Building event cube")
 
-        with dask.config.set({"array.chunk-size": xconfig.chunk_size}):
-            chunks_spec = get_chunks_spec(xconfig)
-            dataset = datasets[var_cfg.name]["dataset"].squeeze().chunk(chunks_spec)   
+        dataset = datasets[var_cfg.name]["dataset"].squeeze()
 
-        # 6D cube: rolling_period, quantile, lag, event, lat, lon
+        # 6D cube: rolling_period, quantile, lag, event, spatial...
+        # build_event_cube extracts only the ~250 needed timesteps eagerly,
+        # so no special chunking of the input dataset is required.
         event_cube = build_event_cube(
             dataset, var_cfg, nclosest_calc.results_nb_dates, xconfig,
         )
 
+        # Write event cube to zarr FIRST, before computing any derived stats.
+        # This prevents Dask from holding both the raw event_cube computation
+        # graph and the derived statistics graphs in memory simultaneously.
+        logger.info("Writing event cube")
+
+        event_cube = event_cube.chunk({
+            xconfig.rolling_period: 1,
+            xconfig.quantile: 1,
+            xconfig.lag: -1,
+            xconfig.event: -1,
+            xconfig.spatial_dims[0]: 'auto',
+            xconfig.spatial_dims[1]: 'auto',
+        })
+
+        event_cube_path = output_dir / f"{var_cfg.name}_event_cube.zarr"
+        event_cube.to_zarr(event_cube_path, mode="w")
+
+        # Re-open from zarr so all downstream work reads from disk,
+        # not from the in-memory task graph.
+        del event_cube
+        event_cube = xr.open_zarr(event_cube_path)[var_cfg.name]
+
         climate_mean = datasets[var_cfg.name]["climate_mean"]
         climate_var = datasets[var_cfg.name]["climate_var"]
 
+        logger.info("Computing statistics")
         comp_anom = (event_cube.mean(xconfig.lag).mean(xconfig.event) - climate_mean).rename(var_cfg.name)
         norm_var_tilde = (event_cube.var(xconfig.event) / climate_var).rename(var_cfg.name)
         weight_var_tilde = na_box.spatial_mean(norm_var_tilde * 100).rename(var_cfg.name)
@@ -126,7 +154,6 @@ if __name__ == "__main__":
         chi_mask = calculate_chi_mask(norm_var_hat, df)
         norm_var_hat = norm_var_hat.where(chi_mask).rename(var_cfg.name)
 
-        logger.info("Computing statistics")
         comp_anom, norm_var_tilde, weight_var_tilde, norm_var_hat = dask.compute(
             comp_anom,
             norm_var_tilde,

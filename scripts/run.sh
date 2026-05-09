@@ -20,7 +20,7 @@ if [[ "$3" == "-v" || "$3" == "-verbose" ]]; then
 fi
 
 # Local paths
-HOME_DIR="/home/benjamin"
+HOME_DIR="/home/bensi"
 MODULE_DIR="${HOME_DIR}/instantonanalysis"
 OUTPUT_DIR="${MODULE_DIR}/outputs"
 
