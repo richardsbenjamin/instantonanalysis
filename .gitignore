@@ -3,3 +3,6 @@
 __pycache__
 outputs/*
 *.png
+*.egg-info
+uv.lock
+.python-version

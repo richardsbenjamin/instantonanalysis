@@ -38,10 +38,10 @@ class LonLatBox(IBox):
     def __post_init__(self):
         """Basic coordinate validation."""
         # Longitude validation
-        if LongitudeSystem[self.lon_system] == LongitudeSystem.EAST_WEST:
+        if self.lon_system == LongitudeSystem.EAST_WEST:
             if not (-180 <= self.lon_min <= 180 and -180 <= self.lon_max <= 180):
                 raise ValueError("Longitudes must be between -180 and 180 for EAST_WEST system")
-        elif LongitudeSystem[self.lon_system] == LongitudeSystem.CONTINUOUS:
+        elif self.lon_system == LongitudeSystem.CONTINUOUS:
             if not (0 <= self.lon_min <= 360 and 0 <= self.lon_max <= 360):
                 raise ValueError("Longitudes must be between 0 and 360 for CONTINUOUS system")
         else:
@@ -54,10 +54,10 @@ class LonLatBox(IBox):
         if not (-90 <= self.lat_min <= 90 and -90 <= self.lat_max <= 90):
             raise ValueError("Latitudes must be between -90 and 90")
         
-        if LatitudeSystem[self.lat_system] == LatitudeSystem.NORTH_SOUTH:
+        if self.lat_system == LatitudeSystem.NORTH_SOUTH:
             if self.lat_min < self.lat_max:
                 raise ValueError("In NORTH_SOUTH system, lat_min (south) cannot be less than lat_max (north)")
-        elif LatitudeSystem[self.lat_system] == LatitudeSystem.SOUTH_NORTH:
+        elif self.lat_system == LatitudeSystem.SOUTH_NORTH:
             if self.lat_min > self.lat_max:
                 raise ValueError("In SOUTH_NORTH system, lat_min (north) cannot be greater than lat_max (south)")
         else:
@@ -110,13 +110,13 @@ class LonLatBox(IBox):
 
     @staticmethod
     def convert_lon_to_continuous(lons: List, lon_system: LongitudeSystem) -> List:
-        if LongitudeSystem[lon_system] == LongitudeSystem.EAST_WEST:
+        if lon_system == LongitudeSystem.EAST_WEST:
             return [(lon + 360) % 360 for lon in lons]
         return lons
         
     @staticmethod
     def convert_lat_to_north_south(lats: List, lat_system: LatitudeSystem) -> List:
-        if LatitudeSystem[lat_system] == LatitudeSystem.SOUTH_NORTH:
+        if lat_system == LatitudeSystem.SOUTH_NORTH:
             return [-lat for lat in lats]
         return lats
 

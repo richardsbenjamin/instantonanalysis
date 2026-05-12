@@ -113,8 +113,6 @@ if __name__ == "__main__":
         dataset = datasets[var_cfg.name]["dataset"].squeeze()
 
         # 6D cube: rolling_period, quantile, lag, event, spatial...
-        # build_event_cube extracts only the ~250 needed timesteps eagerly,
-        # so no special chunking of the input dataset is required.
         event_cube = build_event_cube(
             dataset, var_cfg, nclosest_calc.results_nb_dates, xconfig,
         )

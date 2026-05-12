@@ -49,6 +49,9 @@ class IBox(ABC):
         res = self.enforce_coords(ds, xconfig)
         _dims = self.get_names(res, xconfig)
 
+        if dims is None:
+            dims = _dims
+
         self._check_bounds(res, _dims)
         try:
             subset = self.select(res, _dims)

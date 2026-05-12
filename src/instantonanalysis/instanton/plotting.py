@@ -66,6 +66,7 @@ def plot_density_panel(
     data: xr.DataArray,
     neighbor_ranges: xr.DataArray,
     levels: List[float],
+    quantile_dim: str,
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
@@ -84,7 +85,7 @@ def plot_density_panel(
         q_val = float(data.quantile(q=lvl))
         ax.plot([q_val, q_val], [ylim[0], ylim[1]], color=col, label=rf"$\alpha = {lvl}$")
         
-        q_sel = neighbor_ranges.sel(quantiles=lvl)
+        q_sel = neighbor_ranges.sel(**{quantile_dim: lvl})
         n_min = float(q_sel.min())
         n_max = float(q_sel.max())
         ax.plot([n_min, n_max], [jitter + dec, jitter + dec], color=col, linewidth=linewidth)
@@ -99,29 +100,29 @@ def plot_density_panel(
         ax.legend(**legend_kwargs)
 
 def plot_quantile_panels(
-    quantile_dim: str,
-    contourf_data: xr.DataArray,
-    contour_data: xr.DataArray,
-    box: LonLatBox,
-    title_func: Callable,
-    levels_cf: np.ndarray,
-    levels_c: np.ndarray,
-    label: str,
-    xticks: np.ndarray,
-    yticks: np.ndarray,
-    xticklabels_func: Callable,
-    yticklabels_func: Callable,
-    cmap: str = "RdBu_r",
-    extend: str = "both",
-    alpha: float = 1,
-    projection: ccrs.Projection = ccrs.PlateCarree(),
-    transform: ccrs.Projection = ccrs.PlateCarree(),
-    ncols: int = 2,
-    figsize: tuple = (27, 10),
-    subplots_adjust: dict = DEFAULT_SUBPLOTS_ADJUST,
-    add_axes: list[float] = DEFAULT_ADD_AXES,
-) -> plt.Figure:
-    quantiles = getattr(contour_data, quantile_dim).values
+        quantile_dim: str,
+        contourf_data: xr.DataArray,
+        contour_data: xr.DataArray,
+        box: LonLatBox,
+        title_func: Callable,
+        levels_cf: np.ndarray,
+        levels_c: np.ndarray,
+        label: str,
+        xticks: np.ndarray,
+        yticks: np.ndarray,
+        xticklabels_func: Callable,
+        yticklabels_func: Callable,
+        cmap: str = "RdBu_r",
+        extend: str = "both",
+        alpha: float = 1,
+        projection: ccrs.Projection = ccrs.PlateCarree(),
+        transform: ccrs.Projection = ccrs.PlateCarree(),
+        ncols: int = 2,
+        figsize: tuple = (27, 10),
+        subplots_adjust: dict = DEFAULT_SUBPLOTS_ADJUST,
+        add_axes: list[float] = DEFAULT_ADD_AXES,
+    ) -> plt.Figure:
+    quantiles = contour_data[quantile_dim].values
     nrows = (len(quantiles) - 1) // ncols + 1
     
     fig = plt.figure(figsize=figsize)

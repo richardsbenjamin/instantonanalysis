@@ -99,6 +99,14 @@ class HealPixBox(IBox):
         # HealPix is typically already indexed by integers, but we ensure order
         return res.sortby(list(dims))
 
+    def extract(
+            self,
+            ds: xrArray,
+            xconfig: Optional[Any] = None,
+            dims: Tuple[str, ...] = ("points",),
+        ) -> xrArray:
+        return super().extract(ds, xconfig, dims)
+
     def select(self, series: xr.DataArray, dims: Tuple[str, str, str]) -> xr.DataArray:
         """The 3D implementation of the selection logic."""
         f_dim, h_dim, w_dim = dims
@@ -113,6 +121,6 @@ class HealPixBox(IBox):
             da: xr.DataArray, 
             xconfig: Optional[XConfig] = None
         ) -> np.ndarray:
-        da = self.extract(da, xconfig=xconfig, dims=("points",))
+        da = self.extract(da, xconfig=xconfig)
         return da.mean(dim="points")
 

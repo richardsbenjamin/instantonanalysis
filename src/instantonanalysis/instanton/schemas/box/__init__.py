@@ -14,4 +14,5 @@ __all__ = [
     "LongitudeSystem",
     "LonLatBox",
     "HealPixBox",
+    "IBox",
 ]

@@ -173,10 +173,10 @@ def get_df_array(event_cube: xr.DataArray, count_dim: str, max_dims: list[str]) 
 
 def load_config(
         config_name: str = "config", 
-        overrides: Optional[List[str]] = None,
+        overrides: Optional[List[str]] = [],
         schema_node: Optional[Node] = None,
     ) -> DictConfig:
-    if overrides is None:
+    if overrides:
         overrides = sys.argv[1:]
     if schema_node is not None:
         cs = ConfigStore.instance()

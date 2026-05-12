@@ -6,12 +6,13 @@ from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import xarray as xr
+from hydra.utils import instantiate
 
-from instantonanalysis.instanton.lonlat import (
+from instantonanalysis.instanton.schemas.box import (
+    HealPixBox,
     LonLatBox, 
     LongitudeSystem, 
     LatitudeSystem,
-    get_lon_lat_box,
 )
 from instantonanalysis.instanton.plotting import (
     plot_density_panel,
@@ -26,6 +27,7 @@ from instantonanalysis.instanton.utils import (
 
 if TYPE_CHECKING:
     from instantonanalysis.instanton.schema import VariableConfig
+    from instantonanalysis.instanton.schema.box import IBox
     from instantonanalysis.instanton.nbclosest import NClosestConfig
     
 
@@ -54,6 +56,7 @@ def plot_densities(
         rolling_periods_tab: list[int], 
         select_months: list[int], 
         time_dim: str,
+        quantile_dim: str,
         results_path: str,
     ) -> None:
     var = var_cfg.name
@@ -75,7 +78,7 @@ def plot_densities(
     for i, location in enumerate(locations):
         for j, r in enumerate(rolling_periods_tab):
             raw_series = data_in[location]["series_obs"][var] + offset
-            rolling = raw_series.rolling(time=r, center=True).mean()
+            rolling = raw_series.rolling(**{time_dim: r, "center": True}).mean()
             data_slice = filter_by_months(rolling, time_dim, select_months)
             
             neighbors_celsius = data_in[location]["closest_neighbours"][var].sel(rolling_period=r) + offset 
@@ -89,6 +92,7 @@ def plot_densities(
                 data=data_slice,
                 neighbor_ranges=neighbors_celsius,
                 levels=quantiles,
+                quantile_dim=quantile_dim,
                 title=f"{panels[i][j]} {location} r={r}",
                 xlabel=f"{var_cfg.long_name} [{var_cfg.unit}]" if is_last_row else "",
                 ylabel="Density" if is_first_col else "",
@@ -103,7 +107,8 @@ def plot_quantile_data(
         rolling_periods_tab: list[int], 
         select_months: list[int], 
         time_dim: str,
-        extract_box: LonLatBox,
+        quantile_dim: str,
+        extract_box: IBox,
         results_path: str,
         levels_cf: list[float],
         levels_c: list[float],
@@ -116,14 +121,14 @@ def plot_quantile_data(
         
         for r in rolling_periods_tab:
             fig = plt.figure(figsize=(27,10))
-            gs = fig.add_gridspec((len(composites.quantiles)-1)//2+1,2)
-            lon_lat_box = get_lon_lat_box(next(
+            gs = fig.add_gridspec((len(composites[quantile_dim])-1)//2+1,2)
+            lon_lat_box = instantiate(next(
                 location_obj for location_obj in locations.values() if location_obj.output_folder == location
             ))
             contour_in = composites.sel({"rolling_period": r})
             fig = plot_quantile_panels(
-                quantile_dim="quantiles", 
-                contourf_data=contour_in["t2m"], 
+                quantile_dim=quantile_dim, 
+                contourf_data=contour_in["t2m0"], 
                 contour_data=contour_in["z500"] / 9.80665, 
                 box=lon_lat_box, 
                 title_func=title_func, 
@@ -140,7 +145,7 @@ def plot_quantile_data(
             plt.savefig(f"{results_path}/{location}/composite_anomalies_r{r}.png", dpi=300, bbox_inches='tight')
 
 
-na_box = LonLatBox(
+na_box_ll = LonLatBox(
     lon_min=-80,
     lon_max=50,
     lat_min=22.5,
@@ -148,6 +153,7 @@ na_box = LonLatBox(
     lon_system=LongitudeSystem.EAST_WEST,
     lat_system=LatitudeSystem.SOUTH_NORTH,
 )
+
 
 
 if __name__ == "__main__":
@@ -161,6 +167,9 @@ if __name__ == "__main__":
     rolling_periods_tab = cfg.analysis.rolling_periods
     select_months = cfg.analysis.select_months
     time_dim = cfg.xarray.time_dim
+    quantile_dim = cfg.xarray.quantile
+
+    na_box = HealPixBox.from_lonlat_box(cfg.nside, na_box_ll)
 
     logger.info("Loading data")
     climate_means = {
@@ -178,6 +187,7 @@ if __name__ == "__main__":
         rolling_periods_tab,
         select_months,
         time_dim,
+        quantile_dim,
         cfg.paths.results_root,
     )
     
@@ -193,6 +203,7 @@ if __name__ == "__main__":
         rolling_periods_tab=rolling_periods_tab,
         select_months=select_months,
         time_dim=time_dim,
+        quantile_dim=quantile_dim,
         extract_box=na_box,
         results_path=cfg.paths.results_root,
         cb_label="Anomaly of T2M [°C]",
@@ -209,7 +220,7 @@ if __name__ == "__main__":
             for r in rolling_periods_tab:
                 fig = plt.figure(figsize=(27,10))
                 gs = fig.add_gridspec((len(composites.quantiles)-1)//2+1,2)
-                lon_lat_box = get_lon_lat_box(next(
+                lon_lat_box = instantiate(next(
                     location_obj for location_obj in locations.values() if location_obj.output_folder == location
                 ))
                 fig = plot_quantile_panels(
