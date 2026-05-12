@@ -7,10 +7,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if TYPE_CHECKING:
-    from typing import Iterable, Tuple, List
+    from typing import Any, Callable, Dict, Iterable, Optional, Tuple, List
 
-    from cartopy import crs as ccrs
     import xarray as xr
+    from cartopy import crs as ccrs
+
+    from instantonanalysis.instanton.schemas.box import IBox
 
 DEFAULT_ADD_AXES = [0.935, 0.05, 0.02, 0.9]
 DEFAULT_COLOURS = ['gold','darkorange', 'red', 'black']
@@ -103,15 +105,15 @@ def plot_quantile_panels(
         quantile_dim: str,
         contourf_data: xr.DataArray,
         contour_data: xr.DataArray,
-        box: LonLatBox,
+        box: IBox,
         title_func: Callable,
-        levels_cf: np.ndarray,
-        levels_c: np.ndarray,
         label: str,
         xticks: np.ndarray,
         yticks: np.ndarray,
         xticklabels_func: Callable,
         yticklabels_func: Callable,
+        levels_cf: Optional[np.ndarray] = None,
+        levels_c: Optional[np.ndarray] = None,
         cmap: str = "RdBu_r",
         extend: str = "both",
         alpha: float = 1,

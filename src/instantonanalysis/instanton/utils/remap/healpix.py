@@ -24,6 +24,7 @@ faces and H=W=nside of the HEALPix map. The HEALPix base faces are indiced as fo
 Details on the HEALPix can be found at https://iopscience.iop.org/article/10.1086/427976
 """
 
+import itertools
 import os
 from tqdm import tqdm
 import multiprocessing
@@ -58,6 +59,54 @@ def to_chunked_dataset(ds, chunking):
         except TypeError:
             pass  # Constants have variables that cannot be iterated; these are skipped here
     return ds_new
+
+def healpix_to_latlon(
+        fcst: xr.Dataset,
+        var: str | list[str],
+        spatial_dims: list[str] = ["face", "height", "width"],
+        nside: int = 64,
+    ):
+    mapper = HEALPixRemap(latitudes=181, longitudes=360, nside=nside)
+
+    # normalise var to a list
+    if var is None:
+        raise ValueError(f"No variable specified. Available: {list(fcst.data_vars)}")
+    vars_ = [var] if isinstance(var, str) else var
+
+    # validate all vars up front
+    missing = [v for v in vars_ if v not in fcst.data_vars]
+    if missing:
+        raise ValueError(f"Variables {missing} not found. Available: {list(fcst.data_vars)}")
+
+    remapped = {}
+    for v in vars_:
+        da = fcst[v].squeeze()
+        other_dims  = {dim: da[dim] for dim in da.dims if dim not in spatial_dims}
+        other_shape = [len(c) for c in other_dims.values()]
+        buf         = np.zeros(other_shape + [181, 360], dtype=np.float32)
+
+        for idx_combo, val_combo in tqdm(
+            zip(itertools.product(*[range(s) for s in other_shape]),
+                itertools.product(*other_dims.values())),
+            total=int(np.prod(other_shape)),
+            desc=f"Remapping {v}",
+            unit="slice",
+        ):
+            select_ = dict(zip(other_dims.keys(), val_combo))
+            buf[idx_combo] = mapper.hpx2ll(da.sel(**select_).values)
+
+        remapped[v] = xr.DataArray(
+            buf,
+            dims=[*other_dims.keys(), 'lat', 'lon'],
+            coords={
+                **{dim: da[dim] for dim in other_dims},
+                'lat': np.arange(90, -90.1, -1),
+                'lon': np.arange(0, 360, 1),
+            },
+        )
+
+    return xr.Dataset(remapped)
+
 
 class HEALPixRemap(_BaseRemap):
 

@@ -8,29 +8,21 @@ defaults:
 nside: 64
 
 paths:
-  data_root: "./instantonanalysis/data"
+  data_root: "./data"
   filenames: ["closest_neighbours", "series_obs", "composite_anomalies", "normalised_var_hat"]
-  results_root: "./instantonanalysis/outputs/healpix"
+  results_root: "./outputs/healpix"
+  climate_mean: "climate_mean_atmos_hpx64_100year.zarr"
+
 
 analysis:
   rolling_periods: [1, 5]
   select_months: [6, 8]
   quantiles: [0.75, 0.95, 0.99, 0.999]
 
-variables:
-  t2m:
-    climate_mean_path: "climate_mean_atmos_hpx64_100year.zarr"
-    climate_var_path: "climate_variance_atmos_hpx64_100year.zarr"
-  
-  z500:
-    climate_mean_path: "climate_mean_atmos_hpx64_100year.zarr"
-    climate_var_path: "climate_variance_atmos_hpx64_100year.zarr"
-
-healpix:
-  xconfig:
-    time_dim: "step"
-    rolling_period_dim: "rolling_period"
-    quantile_dim: "quantile" # plural to not confuse with the xarray quantile function
-    lag_dim: "lag"
-    event_dim: "event"
+xconfig:
+  time_dim: "step"
+  rolling_period: "rolling_period"
+  quantile: "quantile"
+  lag: "lag"
+  event: "event"
   

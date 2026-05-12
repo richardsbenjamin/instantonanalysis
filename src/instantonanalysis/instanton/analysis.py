@@ -91,6 +91,16 @@ def calculate_closest_neighbors(
         coords={time_dim: np.arange(n)},
     )
 
+def calculate_degrees_of_freedom(
+        event_cube: xr.DataArray,
+        count_dim: str,
+        max_dims: list[str],
+        pre_mean_dim: Optional[str] = None, 
+    ) -> xr.DataArray:
+    cube = event_cube.mean(dim=pre_mean_dim) if pre_mean_dim is not None else event_cube
+    df = cube.count(dim=count_dim)
+    return df.max(dim=max_dims) - nb_dim(cube, dims)
+
 def calculate_mean(
         dataset: xr.Dataset, 
         dim: str = "time"

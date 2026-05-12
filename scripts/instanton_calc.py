@@ -11,6 +11,7 @@ from hydra.utils import instantiate
 
 from instantonanalysis.instanton.analysis import (
     calculate_chi_mask,
+    calculate_degrees_of_freedom,
     calculate_observable,
 )
 from instantonanalysis.instanton.nbclosest import NClosestCalc, get_nclosest_config
@@ -148,9 +149,14 @@ if __name__ == "__main__":
         weight_var_tilde = na_box.spatial_mean(norm_var_tilde * 100).rename(var_cfg.name)
         norm_var_hat = (event_cube.mean(xconfig.lag).var(xconfig.event) / climate_var).rename(var_cfg.name)
 
-        df = get_df_array(event_cube, xconfig.event, xconfig.spatial_dims)
+        df = calculate_degrees_of_freedom(
+            event_cube,
+            count_dim=xconfig.event,
+            max_dims=xconfig.spatial_dims,
+            pre_mean_dim=xconfig.lag
+        )
         chi_mask = calculate_chi_mask(norm_var_hat, df)
-        norm_var_hat = norm_var_hat.where(chi_mask).rename(var_cfg.name)
+        norm_var_hat = norm_var_hat.where(chi_mask, other=-9999)
 
         comp_anom, norm_var_tilde, weight_var_tilde, norm_var_hat = dask.compute(
             comp_anom,

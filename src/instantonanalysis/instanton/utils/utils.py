@@ -1,28 +1,17 @@
 from __future__ import annotations
 
-import os
-import sys
 from datetime import timedelta
 from pathlib import Path
-from typing import List, Optional
 
 import numpy as np
 import xarray as xr
 from pandas import Timedelta
-from hydra import initialize, compose
-from hydra.core.config_store import ConfigStore
 
-import instantonanalysis.hydra_logic
 from instantonanalysis.instanton._typing import TYPE_CHECKING
 from instantonanalysis.instanton.metrics import DISTANCE_FUNCTIONS
 from instantonanalysis.instanton.schemas.box.lonlat import LonLatBox
-from instantonanalysis.instanton.schemas.box.healpix import HealPixBox
 
 if TYPE_CHECKING:
-    from datetime import datetime
-
-    from omegaconf import DictConfig
-
     from instantonanalysis.instanton._typing import DistanceFunction
     from instantonanalysis.instanton.variable import VariableConfig
     from instantonanalysis.instanton.xconfig import XConfig
@@ -165,25 +154,6 @@ def generate_panels(rows: int, cols: int) -> list[list[str]]:
 
 def get_distance_function(dist_func: str) -> DistanceFunction:
     return DISTANCE_FUNCTIONS[dist_func]
-
-def get_df_array(event_cube: xr.DataArray, count_dim: str, max_dims: list[str]) -> xr.DataArray:
-    # degrees of freedom
-    df = event_cube.count(dim=count_dim)
-    return df.max(dim=max_dims) - 1
-
-def load_config(
-        config_name: str = "config", 
-        overrides: Optional[List[str]] = [],
-        schema_node: Optional[Node] = None,
-    ) -> DictConfig:
-    if overrides:
-        overrides = sys.argv[1:]
-    if schema_node is not None:
-        cs = ConfigStore.instance()
-        cs.store(name=config_name, node=schema_node)
-    with initialize(version_base=None, config_path="../config"):
-        cfg = compose(config_name=config_name, overrides=overrides)
-        return cfg
 
 def read_dataset(path: str, cftime: bool = True) -> xr.Dataset:
     time_coder = xr.coders.CFDatetimeCoder(use_cftime=cftime)

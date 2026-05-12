@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import itertools
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import healpy as hp
 import matplotlib.pyplot as plt
+import numpy as np
 import xarray as xr
 from hydra.utils import instantiate
+from tqdm import tqdm
 
 from instantonanalysis.instanton.schemas.box import (
     HealPixBox,
@@ -21,15 +25,18 @@ from instantonanalysis.instanton.plotting import (
 from instantonanalysis.instanton.utils import (
     filter_by_months,
     generate_panels,
+    healpix_to_latlon,
     load_config,
     read_dataset,
 )
 
 if TYPE_CHECKING:
+    from typing import Optional
+
     from instantonanalysis.instanton.schema import VariableConfig
     from instantonanalysis.instanton.schema.box import IBox
     from instantonanalysis.instanton.nbclosest import NClosestConfig
-    
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,6 +46,7 @@ XTICKS = [0, 30, 60, -30, -60]
 PANEL_LABELS = ['(a)','(b)','(c)','(d)']
 XTICK_LABELS = ['0°', '30°E', '60°E', '30°W', '60°W']
 YTICK_LABELS = ['25°N', '45°N', '65°N']
+
 
 def load_data(data_root: str, locations: list[str], filenames: list[str]) -> dict:
     return {
@@ -110,9 +118,9 @@ def plot_quantile_data(
         quantile_dim: str,
         extract_box: IBox,
         results_path: str,
-        levels_cf: list[float],
-        levels_c: list[float],
         cb_label: str,
+        levels_cf: Optional[list[float]] = None,
+        levels_c: Optional[list[float]] = None,
         cmap: str = "RdBu_r",
         extend: str = "both",
     ) -> None:
@@ -123,7 +131,7 @@ def plot_quantile_data(
             fig = plt.figure(figsize=(27,10))
             gs = fig.add_gridspec((len(composites[quantile_dim])-1)//2+1,2)
             lon_lat_box = instantiate(next(
-                location_obj for location_obj in locations.values() if location_obj.output_folder == location
+                location_obj.box for location_obj in locations.values() if location_obj.output_folder == location
             ))
             contour_in = composites.sel({"rolling_period": r})
             fig = plot_quantile_panels(
@@ -132,8 +140,6 @@ def plot_quantile_data(
                 contour_data=contour_in["z500"] / 9.80665, 
                 box=lon_lat_box, 
                 title_func=title_func, 
-                levels_cf=levels_cf, 
-                levels_c=levels_c, 
                 label=cb_label, 
                 xticks=XTICKS, 
                 yticks=YTICKS, 
@@ -145,7 +151,7 @@ def plot_quantile_data(
             plt.savefig(f"{results_path}/{location}/composite_anomalies_r{r}.png", dpi=300, bbox_inches='tight')
 
 
-na_box_ll = LonLatBox(
+na_box = LonLatBox(
     lon_min=-80,
     lon_max=50,
     lat_min=22.5,
@@ -166,16 +172,21 @@ if __name__ == "__main__":
     quantiles = cfg.analysis.quantiles
     rolling_periods_tab = cfg.analysis.rolling_periods
     select_months = cfg.analysis.select_months
-    time_dim = cfg.xarray.time_dim
-    quantile_dim = cfg.xarray.quantile
+    var_names = [var.name for var in cfg.variables.values()]
 
-    na_box = HealPixBox.from_lonlat_box(cfg.nside, na_box_ll)
+    xconfig = instantiate(cfg.xconfig)
+    time_dim = xconfig.time_dim
+    quantile_dim = xconfig.quantile
 
     logger.info("Loading data")
-    climate_means = {
-        var.name: read_dataset(Path(cfg.paths.data_root) / var.climate_mean_path)[var.name]
-        for var in cfg.variables.values()
-    }
+    climate_means = healpix_to_latlon(
+        read_dataset(
+            Path(cfg.paths.data_root) / cfg.paths.climate_mean
+        ),
+        spatial_dims=xconfig.spatial_dims,
+        var=var_names,
+    )
+    
     data_in = load_data(cfg.paths.results_root, location_folders, filenames)
 
     logger.info("Plotting density panels")
@@ -195,9 +206,19 @@ if __name__ == "__main__":
     yticklabels_func = lambda i: YTICK_LABELS if i % 2 == 0 else ""
     title_func = lambda i, q: fr"({chr(ord('a') + i)}) $\alpha = {q}$"
 
+    data_in_ll = {}
+    for location, data_dict in data_in.items():
+        data_in_ll[location] = {}
+        for data_type in ['composite_anomalies', 'normalised_var_hat']:
+            data_in_ll[location][data_type] = healpix_to_latlon(
+                data_dict[data_type],
+                spatial_dims=xconfig.spatial_dims,
+                var=var_names,
+            )
+
     logger.info("Plotting composite anomalies")
     plot_quantile_data(
-        data_in=data_in,
+        data_in=data_in_ll,
         plot_data="composite_anomalies",
         locations=locations,
         rolling_periods_tab=rolling_periods_tab,
@@ -213,24 +234,22 @@ if __name__ == "__main__":
 
     logger.info("Plotting normalised var hat")
     for var_cfg in cfg.variables.values():
-        for location, data_dict in data_in.items():
+        for location, data_dict in data_in_ll.items():
             composites = na_box.extract(data_dict["composite_anomalies"][var_cfg.name]) + na_box.extract(climate_means[var_cfg.name])
             var_hats = na_box.extract(data_dict["normalised_var_hat"][var_cfg.name]) * 100
             
             for r in rolling_periods_tab:
                 fig = plt.figure(figsize=(27,10))
-                gs = fig.add_gridspec((len(composites.quantiles)-1)//2+1,2)
+                gs = fig.add_gridspec((len(composites[quantile_dim])-1)//2+1,2)
                 lon_lat_box = instantiate(next(
-                    location_obj for location_obj in locations.values() if location_obj.output_folder == location
+                    location_obj.box for location_obj in locations.values() if location_obj.output_folder == location
                 ))
                 fig = plot_quantile_panels(
-                    quantile_dim="quantiles", 
+                    quantile_dim=quantile_dim, 
                     contourf_data=var_hats.sel({"rolling_period": r}), 
                     contour_data=composites.sel({"rolling_period": r}), 
                     box=lon_lat_box, 
                     title_func=title_func, 
-                    levels_cf=var_cfg.contour_levels.var_hat_f, 
-                    levels_c=var_cfg.contour_levels.var_hat, 
                     label=r"$\hat{V}$ [%]",
                     xticks=XTICKS, 
                     yticks=YTICKS, 
