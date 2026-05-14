@@ -19,11 +19,10 @@ from instantonanalysis.instanton.utils import (
     build_event_cube,
     convert_timedelta2datetime,
     get_distance_function,
-    get_df_array,
     load_config,
     read_dataset,
 )
-from instantonanalysis.utils.parsers import get_calc_args
+from instantonanalysis.instanton.utils.parsers import get_calc_args
 
 if TYPE_CHECKING:
     from instantonanalysis.instanton.nbclosest import NClosestConfig
@@ -63,11 +62,12 @@ if __name__ == "__main__":
     results_norm_tilde = []
     results_weight_tilde = []
     results_norm_hat = []
+    results_chi_masks = []
 
     logger.info("Loading datasets")
     datasets = {}
-    climate_mean_in = read_dataset(data_root_path / f"climate_mean_{cfg.paths.data_file}")[vars_list]
-    climate_var_in = read_dataset(data_root_path / f"climate_variance_{cfg.paths.data_file}")[vars_list]
+    climate_mean_in = read_dataset(data_root_path / f"climate_mean_{cfg.paths.data_file.replace('.nc', '.zarr')}")[vars_list]
+    climate_var_in = read_dataset(data_root_path / f"climate_variance_{cfg.paths.data_file.replace('.nc', '.zarr')}")[vars_list]
     dataset_in = convert_timedelta2datetime(
         read_dataset(data_root_path / cfg.paths.data_file),
         xconfig,
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             pre_mean_dim=xconfig.lag
         )
         chi_mask = calculate_chi_mask(norm_var_hat, df)
-        norm_var_hat = norm_var_hat.where(chi_mask, other=-9999)
+        # norm_var_hat = norm_var_hat.where(chi_mask)
 
         comp_anom, norm_var_tilde, weight_var_tilde, norm_var_hat = dask.compute(
             comp_anom,
@@ -165,6 +165,7 @@ if __name__ == "__main__":
             norm_var_hat
         )
 
+        results_chi_masks.append(chi_mask)
         results_comp_anom.append(comp_anom)
         results_norm_tilde.append(norm_var_tilde)
         results_weight_tilde.append(weight_var_tilde)
@@ -184,6 +185,7 @@ if __name__ == "__main__":
         cfg.paths.normalised_var_tilde: results_norm_tilde,
         cfg.paths.weighted_var_tilde: results_weight_tilde,
         cfg.paths.normalised_var_hat: results_norm_hat,
+        cfg.paths.chi_masks: results_chi_masks,
     }
     for path, data_list in outputs.items():
         combined_ds = xr.merge(data_list).reset_coords(drop=True)

@@ -1,6 +1,8 @@
 *.nc
+*.zarr
 .venv
 __pycache__
+data/*
 outputs/*
 *.png
 *.egg-info

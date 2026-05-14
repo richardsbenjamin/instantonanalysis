@@ -7,7 +7,6 @@ import numpy as np
 from scipy.stats import chi2
 
 from instantonanalysis.instanton.utils import (
-    create_folder,
     filter_by_lon_lat,
     filter_by_months,   
 )
@@ -99,7 +98,7 @@ def calculate_degrees_of_freedom(
     ) -> xr.DataArray:
     cube = event_cube.mean(dim=pre_mean_dim) if pre_mean_dim is not None else event_cube
     df = cube.count(dim=count_dim)
-    return df.max(dim=max_dims) - nb_dim(cube, dims)
+    return df.max(dim=max_dims) - 1
 
 def calculate_mean(
         dataset: xr.Dataset, 

@@ -19,9 +19,9 @@ xconfig:
   time_dim: "step"
   
 paths:
-  data_root: "/data"
-  data_file: "atmos_hpx64_100year.zarr"
-  results_root: "./outputs/healpix"
+  data_root: "./data"
+  data_file: "atmos_1week.nc"
+  results_root: "./outputs/healpix_local"
   auto_correlation: "auto_correlation.nc"
   closest_neighbours: "closest_neighbours.nc"
   quantile_threshold: "quantile_threshold.nc"
@@ -30,11 +30,12 @@ paths:
   normalised_var_tilde: "normalised_var_tilde.nc"
   weighted_var_tilde: "weighted_var_tilde.nc"
   normalised_var_hat: "normalised_var_hat.nc"
+  chi_masks: "chi_masks.nc"
 
 analysis:
   autocorr_days: 31
-  calc_months_init: [5, 9]
-  calc_months: [6, 8]
+  calc_months_init: [1, 1] # [5, 9]
+  calc_months: [1, 1] # [6, 8]
   dist_func: "squared_error"
   nb_closest: 50
   rolling_periods: [1, 5]

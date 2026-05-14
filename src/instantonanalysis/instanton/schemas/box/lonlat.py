@@ -2,21 +2,29 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING
+
+import xarray as xr
 
 from instantonanalysis.instanton.schemas.box.ibox import IBox
 
+if TYPE_CHECKING:
+    from typing import Optional
 
-class LongitudeSystem(Enum):
+    from instantonanalysis.instanton._typing import xrArray
+    from instantonanalysis.instanton.schemas.xconfig import XConfig
+
+
+class LongitudeSystem(str, Enum):
     """Enum for longitude coordinate systems."""
-    EAST_WEST = "east_west"      # -180° to 180°
-    CONTINUOUS = "continuous"    # 0° to 360°
+    EAST_WEST = "EAST_WEST"      # -180° to 180°
+    CONTINUOUS = "CONTINUOUS"    # 0° to 360°
 
 
-class LatitudeSystem(Enum):
+class LatitudeSystem(str,Enum):
     """Enum for latitude coordinate systems."""
-    NORTH_SOUTH = "north_south"  # 90°N to -90°S
-    SOUTH_NORTH = "south_north"  # -90°N to 90°S
+    NORTH_SOUTH = "NORTH_SOUTH"  # 90°N to -90°S
+    SOUTH_NORTH = "SOUTH_NORTH"  # -90°N to 90°S
 
 
 @dataclass
@@ -45,10 +53,10 @@ class LonLatBox(IBox):
             if not (0 <= self.lon_min <= 360 and 0 <= self.lon_max <= 360):
                 raise ValueError("Longitudes must be between 0 and 360 for CONTINUOUS system")
         else:
-            raise ValueError("Invalid longitude system")
+            raise ValueError(f"Invalid longitude system {self.lon_system}")
 
         if self.lon_min > self.lon_max:
-            raise ValueError("lon_min cannot be greater than lon_max")
+            raise ValueError(f"lon_min ({self.lon_min}) cannot be greater than lon_max ({self.lon_max})")
         
         # Latitude validation  
         if not (-90 <= self.lat_min <= 90 and -90 <= self.lat_max <= 90):
@@ -61,7 +69,7 @@ class LonLatBox(IBox):
             if self.lat_min > self.lat_max:
                 raise ValueError("In SOUTH_NORTH system, lat_min (north) cannot be greater than lat_max (south)")
         else:
-            raise ValueError("Invalid latitude system")
+            raise ValueError(f"Invalid latitude system {self.lat_system}")
 
     def _check_bounds(self, ds: xrArray, dims: Tuple[str, str]):
         lon_name, lat_name = dims
@@ -139,7 +147,7 @@ class LonLatBox(IBox):
             
         return res
 
-    def select(self, series: xr.DataArray, dims: Tuple[str, str]) -> xr.DataArray:
+    def select(self, series: xrArray, dims: Tuple[str, str]) -> xrArray:
         lon_dim, lat_dim = dims
         return series.sel({
             lat_dim: slice(*self.lat_min_max),
@@ -148,7 +156,7 @@ class LonLatBox(IBox):
 
     def spatial_mean(
             self,
-            da: xr.DataArray, 
+            da: xrArray, 
             xconfig: Optional[XConfig] = None
         ) -> np.ndarray:
         if xconfig:

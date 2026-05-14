@@ -10,13 +10,13 @@ nside: 64
 paths:
   data_root: "./data"
   filenames: ["closest_neighbours", "series_obs", "composite_anomalies", "normalised_var_hat"]
-  results_root: "./outputs/healpix"
-  climate_mean: "climate_mean_atmos_hpx64_100year.zarr"
+  results_root: "./outputs/healpix_local"
+  climate_mean: "climate_mean_atmos_1week.zarr"
 
 
 analysis:
   rolling_periods: [1, 5]
-  select_months: [6, 8]
+  select_months: [1, 1] # [6, 8]
   quantiles: [0.75, 0.95, 0.99, 0.999]
 
 xconfig:
