@@ -3,6 +3,7 @@
 .venv
 __pycache__
 data/*
+data_local/*
 outputs/*
 *.png
 *.egg-info

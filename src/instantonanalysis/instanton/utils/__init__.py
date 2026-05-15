@@ -8,6 +8,7 @@ from instantonanalysis.instanton.utils.utils import (
     generate_panels,
     get_distance_function,
     read_dataset,
+    transform_data,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "healpix_to_latlon",
     "load_config",
     "read_dataset",
+    "transform_data",
 ]

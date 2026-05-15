@@ -19,9 +19,11 @@ xconfig:
   time_dim: "step"
   
 paths:
-  data_root: "./data"
-  data_file: "atmos_1week.nc"
-  results_root: "./outputs/healpix_local"
+  data_root: "./data_local"
+  data_file: "daily_atmos_1week.zarr"
+  climate_mean: "climate_mean.nc"
+  climate_variance: "climate_variance.nc"
+  results_root: "./outputs/healpix_1week"
   auto_correlation: "auto_correlation.nc"
   closest_neighbours: "closest_neighbours.nc"
   quantile_threshold: "quantile_threshold.nc"

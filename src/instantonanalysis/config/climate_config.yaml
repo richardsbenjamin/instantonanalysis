@@ -1,0 +1,24 @@
+defaults:
+  - spatial: healpix
+  - /variables@variables.t2m: t2m
+  - /variables@variables.z500: z500
+  - _self_
+  
+variables:
+  t2m:
+    transpose: ["step", "face", "height", "width"]
+  z500:
+    transpose: ["step", "face", "height", "width"]
+
+xconfig:
+  time_dim: "step"
+  
+paths:
+  data_root: "./data_local"
+  data_file: "atmos_1week.nc"
+  daily_data: "daily_atmos_1week.zarr"
+  climate_mean: "climate_mean.nc"
+  climate_variance: "climate_variance.nc"
+  
+
+
