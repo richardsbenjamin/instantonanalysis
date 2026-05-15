@@ -70,7 +70,7 @@ class NClosestCalc:
         for q in q_array[self.xconfig.quantile].values:
             result, dates = calculate_closest_neighbors(
                 series_obs_rolling,
-                float(q_array.sel({self.xconfig.quantile: q})),
+                float(q_array.sel({self.xconfig.quantile: q}).squeeze()),
                 spacing,
                 self.time_dim,
                 self.config.nb_closest,
@@ -78,7 +78,7 @@ class NClosestCalc:
             )
             q_list.append(result.expand_dims({self.xconfig.quantile: [q]}))
             q_dates_list.append(dates.expand_dims({self.xconfig.quantile: [q]}))
-            
+
         return (
             xr.concat(q_list, dim=self.xconfig.quantile, join="outer"),
             xr.concat(q_dates_list, dim=self.xconfig.quantile, join="outer"),

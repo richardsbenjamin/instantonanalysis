@@ -12,13 +12,13 @@ variables:
 
 xconfig:
   time_dim: "step"
-  
+
 paths:
-  data_root: "./data_local"
-  data_file: "atmos_1week.nc"
-  daily_data: "daily_atmos_1week.zarr"
+  data_root: "/data"
+  data_file: "atmos_hpx64_100year.zarr"
+  daily_data: "daily_atmos_hpx64_100year.zarr"
   climate_mean: "climate_mean.nc"
   climate_variance: "climate_variance.nc"
-  
+
 
 

@@ -17,10 +17,10 @@ variables:
 
 xconfig:
   time_dim: "step"
-  
+
 paths:
-  data_root: "./data_local"
-  data_file: "daily_atmos_1week.zarr"
+  data_root: "/data"
+  data_file: "daily_atmos_hpx64_100year.zarr"
   climate_mean: "climate_mean.nc"
   climate_variance: "climate_variance.nc"
   results_root: "./outputs/healpix_1week"
@@ -36,8 +36,8 @@ paths:
 
 analysis:
   autocorr_days: 31
-  calc_months_init: [1, 1] # [5, 9]
-  calc_months: [1, 1] # [6, 8]
+  calc_months_init: [5, 9]
+  calc_months: [6, 8]
   dist_func: "squared_error"
   nb_closest: 50
   rolling_periods: [1, 5]

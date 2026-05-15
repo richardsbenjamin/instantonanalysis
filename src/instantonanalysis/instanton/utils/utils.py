@@ -22,6 +22,7 @@ def _get_r_lags(r: int) -> np.ndarray:
 
 def build_event_cube(
         data: xr.Dataset, 
+        var_cfg: VariableConfig, 
         event_dates: xr.Dataset, 
         xconfig: XConfig,
     ) -> xr.Dataset:
@@ -41,14 +42,14 @@ def build_event_cube(
     # dropna is not lazy but event_dates should already have been computed
     event_dates = event_dates.dropna(dim=time_dim).rename({time_dim: event_dim})
 
-    # Compute target_times eagerly
+    # Compute target_times eagerly — it's small (rolling_period × quantile × event × lag)
     target_times = xr.apply_ufunc(
-        lambda dates, lag: np.datetime64(int(dates), 'ns') + np.timedelta64(int(lag), 'D'),
+        lambda dates, lag: np.datetime64(dates.isoformat(), 'ns') + np.timedelta64(int(lag), 'D'),
         event_dates,
         lag_da,
         vectorize=True,
         dask="parallelized",
-        output_dtypes=[event_dates.dtype],
+        output_dtypes=[np.dtype('datetime64[ns]')],
     )
     if hasattr(target_times, 'compute'):
         target_times = target_times.compute()
@@ -56,7 +57,7 @@ def build_event_cube(
     # Instead of data.sel(time=target_times, method='nearest') which requires
     # the full time axis in memory, find the unique indices we need and load
     # only those timesteps.
-    time_coords = data[time_dim].values
+    time_coords = np.array([np.datetime64(t.isoformat(), 'ns') for t in data[time_dim].values])
     target_flat = target_times.values.ravel()
     nearest_indices = np.searchsorted(time_coords, target_flat, side='left')
     # Clamp and pick the closer of the two neighbors
