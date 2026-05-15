@@ -22,7 +22,6 @@ def _get_r_lags(r: int) -> np.ndarray:
 
 def build_event_cube(
         data: xr.Dataset, 
-        var_cfg: VariableConfig, 
         event_dates: xr.Dataset, 
         xconfig: XConfig,
     ) -> xr.Dataset:
@@ -34,9 +33,6 @@ def build_event_cube(
 
     rolling_values = event_dates[rolling_dim]
 
-    # Transform data before any other operations 
-    data = transform_data(data, var_cfg)
-
     # Get max lags across all r
     max_r = int(rolling_values.max())
     global_lags = np.arange(-max_r // 2 + 1, max_r // 2 + 1)
@@ -45,7 +41,7 @@ def build_event_cube(
     # dropna is not lazy but event_dates should already have been computed
     event_dates = event_dates.dropna(dim=time_dim).rename({time_dim: event_dim})
 
-    # Compute target_times eagerly — it's small (rolling_period × quantile × event × lag)
+    # Compute target_times eagerly
     target_times = xr.apply_ufunc(
         lambda dates, lag: np.datetime64(int(dates), 'ns') + np.timedelta64(int(lag), 'D'),
         event_dates,

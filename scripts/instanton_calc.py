@@ -66,8 +66,8 @@ if __name__ == "__main__":
 
     logger.info("Loading datasets")
     datasets = {}
-    climate_mean_in = read_dataset(data_root_path / f"climate_mean_{cfg.paths.data_file.replace('.nc', '.zarr')}")[vars_list]
-    climate_var_in = read_dataset(data_root_path / f"climate_variance_{cfg.paths.data_file.replace('.nc', '.zarr')}")[vars_list]
+    climate_mean_in = read_dataset(data_root_path / cfg.paths.climate_mean)[vars_list]
+    climate_var_in = read_dataset(data_root_path / cfg.paths.climate_variance)[vars_list]
     dataset_in = convert_timedelta2datetime(
         read_dataset(data_root_path / cfg.paths.data_file),
         xconfig,
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
         # 6D cube: rolling_period, quantile, lag, event, spatial...
         event_cube = build_event_cube(
-            dataset, var_cfg, nclosest_calc.results_nb_dates, xconfig,
+            dataset, nclosest_calc.results_nb_dates, xconfig,
         )
 
         # Write event cube to zarr FIRST, before computing any derived stats.
@@ -156,7 +156,6 @@ if __name__ == "__main__":
             pre_mean_dim=xconfig.lag
         )
         chi_mask = calculate_chi_mask(norm_var_hat, df)
-        # norm_var_hat = norm_var_hat.where(chi_mask)
 
         comp_anom, norm_var_tilde, weight_var_tilde, norm_var_hat = dask.compute(
             comp_anom,
