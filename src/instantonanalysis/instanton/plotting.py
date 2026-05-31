@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from instantonanalysis.instanton.schemas.box import IBox
 
-DEFAULT_ADD_AXES = [0.935, 0.05, 0.02, 0.9]
+DEFAULT_ADD_AXES = [0.91, 0.05, 0.02, 0.9]
 DEFAULT_COLOURS = ['gold','darkorange', 'red', 'black']
 KELVIN_OFFSET = 273.15
 DEFAULT_BIN_EDGES = np.arange(152, 248, 5) - 0.5
@@ -24,7 +24,7 @@ DEFAULT_SUBPLOTS_ADJUST = {
     "top": 0.92,
     "bottom": 0.05,
     "left": 0.05,
-    "right": 0.95,
+    "right": 0.9,
     "hspace": 0.2,
     "wspace": 0.1
 }
@@ -78,14 +78,13 @@ def plot_density_panel(
     jitter: float = 0.05,
     linewidth: float = 2,
     xlim: Tuple[float, float] = (10, 30),
-    ylim: Tuple[float, float] = (0, 0.2),
     hist_kwargs: Optional[Dict[str, Any]] = HIST_KWARGS,
     legend_kwargs: Optional[Dict[str, Any]] = LEGEND_KWARGS,
 ) -> None:
     ax.hist(data, **hist_kwargs)
     for (lvl, col, dec) in zip(levels, colours, offsets):
         q_val = float(data.quantile(q=lvl))
-        ax.plot([q_val, q_val], [ylim[0], ylim[1]], color=col, label=rf"$\alpha = {lvl}$")
+        ax.axvline(x=q_val, color=col, label=rf"$\alpha = {lvl}$")
         
         q_sel = neighbor_ranges.sel(**{quantile_dim: lvl})
         n_min = float(q_sel.min())
@@ -96,7 +95,6 @@ def plot_density_panel(
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
     
     if show_legend:
         ax.legend(**legend_kwargs)
@@ -164,6 +162,6 @@ def plot_quantile_panels(
 
     if add_axes:
         cbar_ax = fig.add_axes(add_axes)
-    fig.colorbar(cp, label=label, spacing='proportional', cax=cbar_ax)
+        fig.colorbar(cp, label=label, spacing='proportional', cax=cbar_ax)
     fig.subplots_adjust(**subplots_adjust)
     return fig

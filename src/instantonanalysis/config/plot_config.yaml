@@ -8,15 +8,14 @@ defaults:
 nside: 64
 
 paths:
-  data_root: "./data"
-  filenames: ["closest_neighbours", "series_obs", "composite_anomalies", "normalised_var_hat"]
-  results_root: "./outputs/healpix_local"
-  climate_mean: "climate_mean_atmos_1week.zarr"
-
+  data_root: "/home/benjamin/data"
+  filenames: ["closest_neighbours", "series_obs", "composite_anomalies", "normalised_var_hat", "chi_masks"]
+  converted_filenames: ["composite_anomalies", "normalised_var_hat"]
+  results_root: "./outputs/healpix_100year"
 
 analysis:
   rolling_periods: [1, 5]
-  select_months: [1, 1] # [6, 8]
+  select_months: [6, 8]
   quantiles: [0.75, 0.95, 0.99, 0.999]
 
 xconfig:

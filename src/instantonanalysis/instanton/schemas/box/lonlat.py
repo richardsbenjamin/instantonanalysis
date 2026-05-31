@@ -148,6 +148,7 @@ class LonLatBox(IBox):
         return res
 
     def select(self, series: xrArray, dims: Tuple[str, str]) -> xrArray:
+        self._validate_dims(dims)
         lon_dim, lat_dim = dims
         return series.sel({
             lat_dim: slice(*self.lat_min_max),

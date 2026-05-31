@@ -3,7 +3,7 @@ alias: ???
 unit: ???
 transpose: ["time", "lat", "lon"]
 offset: 0
-scale_factor: 1
+scale: 1
 squeeze: []
 contour_levels: ???
 data_path: ???

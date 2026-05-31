@@ -70,8 +70,8 @@ class HealPixBox(IBox):
         for pix in pix_indices:
             f, y, x = hpxidx2fyx(nside, pix)
             f_list.append(int(f))
-            y_list.append(int(y))
-            x_list.append(int(x))
+            y_list.append(int(nside - 1 - x))
+            x_list.append(int(nside - 1 - y))
             
         return HealPixBox(f_list=f_list, h_list=y_list, w_list=x_list)
 
@@ -95,8 +95,7 @@ class HealPixBox(IBox):
         """HealPix enforcement involves sorting indices for efficient slicing."""
         res = ds.copy()
         dims = self.get_names(res, xconfig)
-        
-        # HealPix is typically already indexed by integers, but we ensure order
+
         return res.sortby(list(dims))
 
     def extract(
@@ -109,6 +108,7 @@ class HealPixBox(IBox):
 
     def select(self, series: xr.DataArray, dims: Tuple[str, str, str]) -> xr.DataArray:
         """The 3D implementation of the selection logic."""
+        self._validate_dims(dims)
         f_dim, h_dim, w_dim = dims
         return series.sel({
             f_dim: xr.DataArray(self.f_list, dims="points"),

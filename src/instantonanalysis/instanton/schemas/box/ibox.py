@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple, List, Any
 
@@ -35,6 +36,38 @@ class IBox(ABC):
             names.append(name)
         
         return tuple(names)
+
+    def _validate_dims(self, dims: Tuple[str, ...]) -> None:
+        expected_categories = list(self._possible_names.keys())
+        for idx, (dim, expected_cat) in enumerate(zip(dims, expected_categories)):
+            expected_aliases = self._possible_names[expected_cat]
+            if dim in expected_aliases:
+                continue  # correct slot
+
+            # Check if the name belongs to a different category
+            actual_cat = None
+            for cat, aliases in self._possible_names.items():
+                if dim in aliases:
+                    actual_cat = cat
+                    break
+
+            if actual_cat is not None:
+                warnings.warn(
+                    f"Dimension '{dim}' at position {idx} is expected to be a "
+                    f"{expected_cat} name (one of {expected_aliases}), but it "
+                    f"matches the {actual_cat} category. The dims tuple may be "
+                    f"in the wrong order. Got dims={dims}.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            else:
+                warnings.warn(
+                    f"Dimension '{dim}' at position {idx} is not a recognised "
+                    f"name for any spatial category. Expected a {expected_cat} "
+                    f"name (one of {expected_aliases}). Got dims={dims}.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
     @abstractmethod
     def enforce_coords(self, ds: xrArray, xconfig: Optional[XConfig] = None) -> xrArray:

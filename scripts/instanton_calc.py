@@ -33,12 +33,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_chunks_spec(xconfig: XConfig) -> dict[str, int]:
-    chunks_spec = {xconfig.time_dim: -1} 
-    for dim in xconfig.spatial_dims:
-        chunks_spec[dim] = 'auto'
-    return chunks_spec
-
 
 if __name__ == "__main__":
     logger.info("Loading config")
@@ -66,8 +60,8 @@ if __name__ == "__main__":
 
     logger.info("Loading datasets")
     datasets = {}
-    climate_mean_in = read_dataset(data_root_path / "climate_mean.nc")[vars_list]
-    climate_var_in = read_dataset(data_root_path / "climate_variance.nc")[vars_list]
+    climate_mean_in = read_dataset(data_root_path / cfg.paths.climate_mean)[vars_list]
+    climate_var_in = read_dataset(data_root_path / cfg.paths.climate_variance)[vars_list]
     dataset_in = read_dataset(data_root_path / cfg.paths.data_file)[vars_list]
 
     for var_cfg in cfg.variables.values():
@@ -86,7 +80,6 @@ if __name__ == "__main__":
         spatial_box=spatial_box,
         xconfig=xconfig,
     ).squeeze()
-    print(series_obs)
 
     logger.info("Calculating nclosest")
     nclosest_config = get_nclosest_config(
@@ -111,9 +104,15 @@ if __name__ == "__main__":
 
         dataset = datasets[var_cfg.name]["dataset"].squeeze()
 
+        # Rechunk to small spatial chunks so dask only materialises one
+        # spatial slice at a time during the lazy isel in build_event_cube.
+        dataset = dataset.chunk({
+            xconfig.spatial_dims[0]: 1,
+        })
+
         # 6D cube: rolling_period, quantile, lag, event, spatial...
         event_cube = build_event_cube(
-            dataset, var_cfg, nclosest_calc.results_nb_dates, xconfig,
+            dataset, nclosest_calc.results_nb_dates, xconfig,
         )
 
         # Write event cube to zarr FIRST, before computing any derived stats.
@@ -126,12 +125,13 @@ if __name__ == "__main__":
             xconfig.quantile: 1,
             xconfig.lag: -1,
             xconfig.event: -1,
-            xconfig.spatial_dims[0]: 'auto',
+            xconfig.spatial_dims[0]: 1,
             xconfig.spatial_dims[1]: 'auto',
         })
 
         event_cube_path = output_dir / f"{var_cfg.name}_event_cube.zarr"
-        event_cube.to_zarr(event_cube_path, mode="w")
+        with dask.config.set(scheduler='synchronous'):
+            event_cube.to_zarr(event_cube_path, mode="w")
 
         # Re-open from zarr so all downstream work reads from disk,
         # not from the in-memory task graph.

@@ -443,7 +443,6 @@ class HEALPixRemap(_BaseRemap):
             shape_out=(self.latitudes, self.longitudes),
             nested=self.nested
             )
-        #ll2d = np.flip(ll2d, axis=1)  # Compensate flip in reprojection function above
 
         if visualize:
             plt.imshow(ll2d, **kwargs)

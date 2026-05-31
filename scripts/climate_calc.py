@@ -28,9 +28,11 @@ if __name__ == "__main__":
     data = data.resample({time_dim: "24h"}).mean()
     data.to_zarr(data_root_path / cfg.paths.daily_data, mode="w")
 
-    mean_ds = data.mean(dim=time_dim)
+    period_data = filter_by_months(data, cfg.time_dim, cfg.calc_months)
+
+    mean_ds = period_data.mean(dim=time_dim)
     mean_ds.to_netcdf(data_root_path / cfg.paths.climate_mean)
 
-    var_ds = data.var(dim=time_dim)
+    var_ds = period_data.var(dim=time_dim)
     var_ds.to_netcdf(data_root_path / cfg.paths.climate_variance)
 
