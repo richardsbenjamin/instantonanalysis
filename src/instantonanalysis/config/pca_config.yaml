@@ -1,0 +1,17 @@
+paths:
+  heatwave: "/home/benjamin/DLESyM_test/outputs/atmos_heatwave_latents_l1.zarr"
+  no_heatwave: "/home/benjamin/DLESyM_test/outputs/atmos_nonheatwave_latents_l1.zarr"
+  output: "./outputs/pca/pca_plot.jpg"
+
+analysis:
+  var: "encoder_l0"
+  batch_size: null
+
+
+xconfig:
+  _target_: instantonanalysis.instanton.schemas.xconfig.XConfigHealPix
+  time_dim: time
+  channel_dim: channel_l0
+  face_dim: face
+  height_dim: height_l0
+  width_dim: width_l0

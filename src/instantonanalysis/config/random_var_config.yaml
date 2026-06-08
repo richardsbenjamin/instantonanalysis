@@ -1,0 +1,36 @@
+defaults:
+  - locations: paris
+  - spatial: healpix
+  - /variables@variables.t2m: t2m
+  - /variables@variables.z500: z500
+  - _self_
+  
+variables:
+  t2m:
+    transpose: ["step", "face", "height", "width"]
+  z500:
+    transpose: ["step", "face", "height", "width"]
+
+xconfig:
+  time_dim: "step"
+
+seed: 42
+
+paths:
+  data_root: "/home/benjamin/data"
+  data_file: "daily_atmos_hpx64_100year.zarr"
+  climate_mean: "climate_mean_JJA.nc"
+  climate_variance: "climate_var_JJA.nc"
+  results_root: "./outputs/healpix_100year"
+  series_obs: "series_obs.nc"
+  closest_neighbours: "closest_neighbours.nc"
+
+  composite_anomalies: "random_var_composite_anomalies.nc"
+  normalised_var_hat: "random_var_normalised_var_hat.nc"
+  chi_masks: "random_var_chi_masks.nc"
+
+analysis:
+  nb_closest: 50
+  rolling_periods: [1, 5]
+  quantiles: [0.75, 0.95, 0.99, 0.999]
+

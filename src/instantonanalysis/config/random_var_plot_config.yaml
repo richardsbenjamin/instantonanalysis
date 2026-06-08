@@ -1,0 +1,27 @@
+defaults:
+  - /variables@variables.t2m: t2m
+  - /variables@variables.z500: z500
+  - /locations@locations.paris: paris
+  - spatial: healpix
+  - _self_
+
+nside: 64
+
+paths:
+  data_root: "/home/benjamin/data"
+  filenames: ["random_var_composite_anomalies", "random_var_normalised_var_hat", "random_var_chi_masks"]
+  converted_filenames: ["random_var_composite_anomalies", "random_var_normalised_var_hat"]
+  results_root: "./outputs/healpix_100year"
+
+analysis:
+  rolling_periods: [1, 5]
+  select_months: [6, 8]
+  quantiles: [0.75, 0.95, 0.99, 0.999]
+
+xconfig:
+  time_dim: "step"
+  rolling_period: "rolling_period"
+  quantile: "quantile"
+  lag: "lag"
+  event: "event"
+  

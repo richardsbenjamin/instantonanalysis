@@ -9,6 +9,7 @@ from instantonanalysis.instanton._typing import TYPE_CHECKING
 @dataclass
 class XConfig:
     time_dim: str = "time"
+    channel_dim: Optional[str] = None
     rolling_period: Optional[str] = "rolling_period"
     quantile: Optional[str] = "quantile"
     lag: Optional[str] = "lag"

@@ -16,7 +16,6 @@ dependencies = [
   "xarray",
   "dask",
   "zarr<3",
-
   # Geo / astronomy
   "cartopy",
   "pyproj",
@@ -24,18 +23,15 @@ dependencies = [
   "shapely",
   "healpy",
   "reproject",
-
   # NetCDF / IO
   "netcdf4",
   "cftime",
   "numcodecs>=0.12,<0.13",
   "zarr<3",
-
   # Plotting
   "matplotlib",
   "pillow",
   "contourpy",
-
   # Jupyter / IPython
   "ipykernel",
   "ipython",
@@ -45,17 +41,14 @@ dependencies = [
   "matplotlib-inline",
   "debugpy",
   "comm",
-
   # HTTP / async
   "aiohttp",
   "requests",
-
   # Config / CLI
   "hydra-core",
   "donfig",
   "click",
   "pyyaml",
-
   # Utilities
   "tqdm",
   "joblib",
@@ -68,6 +61,7 @@ dependencies = [
   "tzdata",
   "six",
   "certifi",
+  "scikit-learn>=1.9.0",
 ]
 
 [tool.setuptools.packages.find]
