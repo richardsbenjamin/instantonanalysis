@@ -20,14 +20,52 @@ if TYPE_CHECKING:
 def hpxidx2fyx(nside: int, hpxidx: int) -> Tuple[int, int, int]:
     f = hpxidx // (nside**2)
     local_idx = hpxidx % (nside**2)
-    
+
     x = 0
     y = 0
     for i in range(int(np.log2(nside))):
         x |= ((local_idx >> (2 * i)) & 1) << i
         y |= ((local_idx >> (2 * i + 1)) & 1) << i
-        
+
     return (f, y, x)
+
+
+def fyx2hpxidx(nside: int, f, y, x) -> np.ndarray:
+    """Inverse of :func:`hpxidx2fyx`: rebuild the nested HEALPix index.
+
+    Bit-interleaves ``x`` (even bit positions) and ``y`` (odd positions) into the
+    face-local index, then offsets by the face. Vectorised over array inputs.
+    """
+    f = np.asarray(f, dtype=np.int64)
+    y = np.asarray(y, dtype=np.int64)
+    x = np.asarray(x, dtype=np.int64)
+    local = np.zeros_like(f)
+    for i in range(int(np.log2(nside))):
+        local |= ((x >> i) & 1) << (2 * i)
+        local |= ((y >> i) & 1) << (2 * i + 1)
+    return f * nside**2 + local
+
+
+def fyx_to_lonlat(nside: int, f, h, w) -> Tuple[np.ndarray, np.ndarray]:
+    """Geographic centre of the HEALPix cells stored at ``(face, height, width)``.
+
+    Inverts the index convention set in :meth:`HealPixBox.from_lonlat_box`, which
+    stores ``h = nside - 1 - x`` and ``w = nside - 1 - y`` (the arrays it fills as
+    ``h_list``/``w_list``). So ``x = nside - 1 - h``, ``y = nside - 1 - w``; the
+    nested pixel index is rebuilt with :func:`fyx2hpxidx` and converted with
+    ``healpy``. Returns ``(lon[-180..180], lat)`` in degrees.
+
+    This is the region-friendly counterpart of ``utils.remap.healpix_to_latlon``,
+    which needs a full ``(12, nside, nside)`` sphere and so cannot be used on a
+    box-filtered point list.
+    """
+    h = np.asarray(h, dtype=np.int64)
+    w = np.asarray(w, dtype=np.int64)
+    x = nside - 1 - h
+    y = nside - 1 - w
+    idx = fyx2hpxidx(nside, f, y, x)
+    lon, lat = hp.pix2ang(nside, idx, nest=True, lonlat=True)
+    return np.where(lon > 180.0, lon - 360.0, lon), lat
 
 
 @dataclass

@@ -1,0 +1,24 @@
+# Inputs are the small Layer-3 region_latents_*.zarr (already Western-Europe
+# filtered); the climatological baseline is the sampled JJA climatology from
+# clim_stats.nc (GLOBAL_PLAN), not the 50 non-heatwave events.
+paths:
+  heatwave: "/home/benjamin/DLESyM_test/outputs/region_latents_heatwave.zarr"
+  no_heatwave: "/home/benjamin/DLESyM_test/outputs/region_latents_nonheatwave.zarr"
+  clim_stats: "/home/benjamin/DLESyM_test/outputs/clim_stats.nc"
+  output_dir: "./outputs/centroid"
+  metrics: "./outputs/centroid/centroid_metrics.csv"
+
+analysis:
+  var: "encoder_l2"
+  level: 2
+  # Trajectory window = rolling_period * 24h. rp=1 -> first 24h of the forecast.
+  rolling_period: 1
+
+
+xconfig:
+  _target_: instantonanalysis.instanton.schemas.xconfig.XConfigHealPix
+  time_dim: time
+  channel_dim: channel_l2
+  face_dim: face
+  height_dim: height_l2
+  width_dim: width_l2

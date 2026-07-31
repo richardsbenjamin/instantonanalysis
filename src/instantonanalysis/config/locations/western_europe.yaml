@@ -1,0 +1,12 @@
+defaults:
+    - _base_location
+
+name: "western_europe"
+output_folder: "/western_europe"
+box:
+  lon_min: -5
+  lon_max: 15
+  lat_min: 52
+  lat_max: 42
+  lon_sys: "EAST_WEST"
+  lat_sys: "NORTH_SOUTH"

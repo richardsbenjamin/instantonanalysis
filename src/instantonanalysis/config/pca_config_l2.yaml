@@ -1,0 +1,23 @@
+# Inputs are the small Layer-3 region_latents_*.zarr (already Western-Europe
+# filtered by scripts/materialize_region_latents.py, per-level points_lN dims),
+# so no on-the-fly box filtering is needed here.
+paths:
+  heatwave: "/home/benjamin/DLESyM_test/outputs/region_latents_heatwave.zarr"
+  no_heatwave: "/home/benjamin/DLESyM_test/outputs/region_latents_nonheatwave.zarr"
+  output: "./outputs/pca/pca_plot_l2.jpg"
+  metrics: "./outputs/pca/level_metrics.csv"
+
+analysis:
+  var: "encoder_l2"
+  level: 2
+  # Region-filtered data is tiny, so in-memory PCA is fine at every level.
+  batch_size: null
+
+
+xconfig:
+  _target_: instantonanalysis.instanton.schemas.xconfig.XConfigHealPix
+  time_dim: time
+  channel_dim: channel_l2
+  face_dim: face
+  height_dim: height_l2
+  width_dim: width_l2

@@ -9,3 +9,4 @@ outputs/*
 *.egg-info
 uv.lock
 .python-version
+*.md
