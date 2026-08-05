@@ -1,5 +1,4 @@
-# Seasonal climatology from the 100-year daily zarr. Run the climate_config_jja /
-# climate_config_djf children rather than this directly.
+# Run the climate_config_jja / climate_config_djf children rather than this directly.
 defaults:
   - climate_config
   - /season@season: jja
