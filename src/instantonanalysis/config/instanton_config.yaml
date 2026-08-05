@@ -5,7 +5,6 @@ defaults:
   - /variables@variables.z500: z500
   - _self_
 
-# Large-scale domain the location sits in; used for the weighted_var_tilde spatial mean.
 domain_box: ${healpix_from_config:${nside},${locations.domain.box}}
 nside: 64
 

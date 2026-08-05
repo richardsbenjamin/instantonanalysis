@@ -1,6 +1,3 @@
-# Inputs are the small Layer-3 region_latents_*.zarr (already Western-Europe
-# filtered); the climatological baseline is the sampled JJA climatology from
-# clim_stats.nc (GLOBAL_PLAN), not the 50 non-heatwave events.
 paths:
   heatwave: "/home/benjamin/DLESyM_test/outputs/region_latents_heatwave.zarr"
   no_heatwave: "/home/benjamin/DLESyM_test/outputs/region_latents_nonheatwave.zarr"
@@ -11,7 +8,6 @@ paths:
 analysis:
   var: "encoder_l1"
   level: 1
-  # Trajectory window = rolling_period * 24h. rp=1 -> first 24h of the forecast.
   rolling_period: 1
 
 

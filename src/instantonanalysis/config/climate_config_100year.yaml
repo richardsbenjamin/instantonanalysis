@@ -5,8 +5,6 @@ defaults:
   - /season@season: jja
   - _self_
 
-# daily_atmos_hpx64_100year.zarr is already daily, already datetime-indexed and
-# already offset/scaled, so every preparation step must be skipped.
 preprocess:
   step_to_datetime: false
   transform: false

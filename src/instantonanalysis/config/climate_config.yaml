@@ -13,8 +13,6 @@ variables:
 xconfig:
   time_dim: "step"
 
-# The raw sample needs the full preparation: hours -> datetimes, offset/scale
-# applied, sub-daily steps averaged to days.
 preprocess:
   step_to_datetime: true
   transform: true
@@ -28,7 +26,7 @@ paths:
   climate_variance: "climate_variance.nc"
 
 analysis:
-  calc_months: null   # one week of data — no seasonal window to select
+  calc_months: null
 
 
 

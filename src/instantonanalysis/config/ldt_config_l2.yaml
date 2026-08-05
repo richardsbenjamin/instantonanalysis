@@ -1,9 +1,3 @@
-# Basis-independent normalised variance at the encoder bottleneck (l2).
-#
-# Inputs are the small Layer-3 region_latents_*.zarr and the sampled JJA
-# climatology clim_latents.zarr (GLOBAL_PLAN). Sigma_clim is built from the raw
-# climatology latents, not from the diagonal-only clim_stats.nc — a generalised
-# eigenproblem needs the full covariance.
 defaults:
   - locations: western_europe
   - _self_
@@ -18,8 +12,6 @@ paths:
   clim_latents: "/home/benjamin/DLESyM_test/outputs/clim_latents.zarr"
   physical_heatwave: "/home/benjamin/DLESyM_test/outputs/atmos_hpx64_4days_heatwave.nc"
   physical_no_heatwave: "/home/benjamin/DLESyM_test/outputs/atmos_hpx64_4days_nonheatwave.nc"
-  # The physical-space norm_var_hat this whole stage answers to (instanton_calc.py
-  # output, same 50 events at q=0.999 / rolling_period=1, same nside-64 grid).
   physical_var_hat: "./outputs/healpix_100year/paris/normalised_var_hat.nc"
   output_dir: "./outputs/latent_ldt"
   metrics: "./outputs/latent_ldt/ldt_metrics.csv"
@@ -27,16 +19,8 @@ paths:
 analysis:
   var: "encoder_l2"
   level: 2
-  # null -> the full 96h forecast trajectory (16 steps).
   window_hours: null
-  # Sample construction. trajectory_mean = the hat quantity (variance across events
-  # of the trajectory mean), matching the physical var_hat figure. pooled = every
-  # (event, step) embedding as its own sample: full rank, exactly invariant under
-  # general invertible maps, but not the hat quantity.
   sample: "trajectory_mean"
-  # Climatological-PC truncation. k=15 keeps ~95% of the climatological variance and
-  # is where the signal/null separation is cleanest without the truncated subspace
-  # becoming strongly basis-dependent (see the k_scan invariance panel).
   k: 15
   k_scan: [5, 10, 15, 20, 30]
   n_null: 200
@@ -45,7 +29,6 @@ analysis:
   shrinkage: "ledoit_wolf"
   probe_vars: ["t2m0", "z500"]
   pushforward_var: "t2m0"
-  # Slice of physical_var_hat to compare the pushforward map against.
   physical_rolling_period: 1
   physical_quantile: 0.999
 

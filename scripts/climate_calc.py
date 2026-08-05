@@ -33,22 +33,15 @@ if __name__ == "__main__":
     dataset_in = read_dataset(data_root_path / cfg.paths.data_file)
     data = dataset_in[vars_list]
 
-    # Selecting variables drops coords none of them use -- on the daily zarrs
-    # that silently loses the size-1 `time`, which the existing climatology
-    # files carry and `step_to_datetime` needs. Put them back.
     dropped_coords = {k: v for k, v in dataset_in.coords.items() if k not in data.coords}
     if dropped_coords:
         data = data.assign_coords(dropped_coords)
 
-    # Raw inputs carry `step` as hours since `time`; the derived daily zarrs
-    # already store it as datetimes.
     if preprocess.step_to_datetime:
         base_time = pd.Timestamp(str(data["time"].values.flat[0]))
         datetimes = base_time + pd.to_timedelta(data[time_dim].values, unit="h")
         data = data.assign_coords({time_dim: datetimes})
 
-    # Likewise the derived zarrs already have offset/scale baked in, so
-    # re-applying the transform there would double-count it.
     if preprocess.transform:
         for var_cfg in cfg.variables.values():
             data[var_cfg.name] = transform_data(data[var_cfg.name].squeeze(), var_cfg)
@@ -67,8 +60,6 @@ if __name__ == "__main__":
     else:
         period_data = data
 
-    # Both statistics stream over the same chunks, so compute them together
-    # and let the synchronous scheduler keep peak memory to one chunk.
     logger.info(f"Computing climatology over {period_data.sizes[time_dim]} steps")
     with dask.config.set(scheduler="synchronous"):
         mean_ds, var_ds = dask.compute(
