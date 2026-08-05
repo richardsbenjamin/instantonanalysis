@@ -1,4 +1,4 @@
 defaults:
   - random_var_config
-  - override /locations: rio
+  - override /locations: delhi
   - _self_

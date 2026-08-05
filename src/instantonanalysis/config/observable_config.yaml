@@ -1,0 +1,19 @@
+defaults:
+  - locations: paris
+  - spatial: healpix
+  - /variables@variables.t2m: t2m
+  - _self_
+
+nside: 64
+
+xconfig:
+  time_dim: "step"
+
+paths:
+  data_root: "/home/benjamin/data"
+  data_file: "daily_atmos_hpx64_100year.zarr"
+  results_root: "./outputs/healpix_100year"
+  series_obs: "series_obs.nc"
+
+analysis:
+  calc_months_init: ${locations.season.calc_months_init}

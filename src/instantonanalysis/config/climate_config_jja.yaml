@@ -1,4 +1,4 @@
 defaults:
-  - climate_config_100year
+  - climate_config
   - override /season: jja
   - _self_

@@ -1,0 +1,12 @@
+defaults:
+    - _base_location
+
+name: "north_india"
+output_folder: "/north_india"
+box:
+  lon_min: 67
+  lon_max: 87
+  lat_min: 34
+  lat_max: 24
+  lon_sys: "EAST_WEST"
+  lat_sys: "NORTH_SOUTH"

@@ -6,8 +6,8 @@ three spatial dims collapse to a per-level ``points_l{N}`` dim (the levels have
 different nsides, hence different in-box point counts).
 
 The region is a location config under ``config/locations/`` (``--region``,
-default ``western_europe``); ``se_australia``, ``north_china`` and ``se_brazil``
-are the regions around Adelaide, Beijing and Rio.
+default ``western_europe``); ``se_australia``, ``north_china`` and ``north_india``
+are the regions around Adelaide, Beijing and Delhi.
 
 Modes (run from the instantonanalysis .venv):
 

@@ -1,0 +1,27 @@
+defaults:
+    - _base_location
+    - /season@season: amj
+    - _self_
+
+name: "delhi"
+output_folder: "/delhi"
+box:
+  lon_min: 75.95
+  lon_max: 78.45
+  lat_min: 29.1
+  lat_max: 28.1
+  lon_sys: "EAST_WEST"
+  lat_sys: "NORTH_SOUTH"
+domain:
+  name: "south_asia"
+  box:
+    lon_min: 30
+    lon_max: 130
+    lat_min: 0
+    lat_max: 50
+    lon_sys: "EAST_WEST"
+    lat_sys: "SOUTH_NORTH"
+  xticks: [30, 60, 90, 120]
+  xtick_labels: ["30°E", "60°E", "90°E", "120°E"]
+  yticks: [0, 15, 30, 45]
+  ytick_labels: ["0°", "15°N", "30°N", "45°N"]

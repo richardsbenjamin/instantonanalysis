@@ -1,6 +1,5 @@
 # Run the climate_config_jja / climate_config_djf children rather than this directly.
 defaults:
-  - climate_config
   - /season@season: jja
   - _self_
 
@@ -12,7 +11,7 @@ preprocess:
 paths:
   data_root: "/home/benjamin/data"
   data_file: "daily_atmos_hpx64_100year.zarr"
-  daily_data: null            # input is already the daily zarr
+  daily_data: null            
   climate_mean: ${season.climate_mean}
   climate_variance: ${season.climate_variance}
 

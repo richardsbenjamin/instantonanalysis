@@ -4,7 +4,7 @@ defaults:
   - /locations@locations.paris: paris
   - /locations@locations.adelaide: adelaide
   - /locations@locations.beijing: beijing
-  - /locations@locations.rio: rio
+  - /locations@locations.delhi: delhi
   - spatial: healpix
   - _self_
 

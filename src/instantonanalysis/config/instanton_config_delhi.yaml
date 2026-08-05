@@ -1,4 +1,4 @@
 defaults:
   - instanton_config
-  - override /locations: rio
+  - override /locations: delhi
   - _self_

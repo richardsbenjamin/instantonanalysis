@@ -1,0 +1,6 @@
+# South-Asian pre-monsoon heatwave season (peak heat is May-June; the monsoon
+# onset suppresses extremes from late June, so JJA is the wrong window here).
+calc_months_init: [3, 7]
+calc_months: [4, 6]
+climate_mean: "climate_mean_AMJ.nc"
+climate_variance: "climate_var_AMJ.nc"

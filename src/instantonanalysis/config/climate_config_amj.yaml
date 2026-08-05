@@ -1,4 +1,4 @@
 defaults:
   - climate_config
-  - override /season: djf
+  - override /season: amj
   - _self_
