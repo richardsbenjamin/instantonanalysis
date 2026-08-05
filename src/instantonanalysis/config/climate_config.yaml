@@ -1,32 +1,20 @@
+# Run the climate_config_jja / climate_config_djf children rather than this directly.
 defaults:
-  - spatial: healpix
-  - /variables@variables.t2m: t2m
-  - /variables@variables.z500: z500
+  - climate_config
+  - /season@season: jja
   - _self_
-  
-variables:
-  t2m:
-    transpose: ["step", "face", "height", "width"]
-  z500:
-    transpose: ["step", "face", "height", "width"]
-
-xconfig:
-  time_dim: "step"
 
 preprocess:
-  step_to_datetime: true
-  transform: true
-  resample: true
+  step_to_datetime: false
+  transform: false
+  resample: false
 
 paths:
-  data_root: "./data_local"
-  data_file: "atmos_1week.nc"
-  daily_data: "daily_atmos_1week.zarr"
-  climate_mean: "climate_mean.nc"
-  climate_variance: "climate_variance.nc"
+  data_root: "/home/benjamin/data"
+  data_file: "daily_atmos_hpx64_100year.zarr"
+  daily_data: null            # input is already the daily zarr
+  climate_mean: ${season.climate_mean}
+  climate_variance: ${season.climate_variance}
 
 analysis:
-  calc_months: null
-
-
-
+  calc_months: ${season.calc_months}
