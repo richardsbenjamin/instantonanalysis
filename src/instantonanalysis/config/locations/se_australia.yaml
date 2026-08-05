@@ -1,0 +1,12 @@
+defaults:
+    - _base_location
+
+name: "se_australia"
+output_folder: "/se_australia"
+box:
+  lon_min: 130
+  lon_max: 150
+  lat_min: -28
+  lat_max: -38
+  lon_sys: "EAST_WEST"
+  lat_sys: "NORTH_SOUTH"

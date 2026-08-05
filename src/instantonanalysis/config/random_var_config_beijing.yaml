@@ -1,0 +1,4 @@
+defaults:
+  - random_var_config
+  - override /locations: beijing
+  - _self_

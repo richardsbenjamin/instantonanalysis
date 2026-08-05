@@ -1,0 +1,27 @@
+defaults:
+    - _base_location
+    - /season@season: jja
+    - _self_
+
+name: "beijing"
+output_folder: "/beijing"
+box:
+  lon_min: 115.15
+  lon_max: 117.65
+  lat_min: 40.4
+  lat_max: 39.4
+  lon_sys: "EAST_WEST"
+  lat_sys: "NORTH_SOUTH"
+domain:
+  name: "east_asia"
+  box:
+    lon_min: 50
+    lon_max: 170
+    lat_min: 15
+    lat_max: 65
+    lon_sys: "EAST_WEST"
+    lat_sys: "SOUTH_NORTH"
+  xticks: [60, 90, 120, 150]
+  xtick_labels: ["60°E", "90°E", "120°E", "150°E"]
+  yticks: [20, 35, 50, 65]
+  ytick_labels: ["20°N", "35°N", "50°N", "65°N"]

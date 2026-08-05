@@ -1,0 +1,27 @@
+defaults:
+    - _base_location
+    - /season@season: djf
+    - _self_
+
+name: "adelaide"
+output_folder: "/adelaide"
+box:
+  lon_min: 138.0
+  lon_max: 140.5
+  lat_min: -34.3
+  lat_max: -35.3
+  lon_sys: "EAST_WEST"
+  lat_sys: "NORTH_SOUTH"
+domain:
+  name: "australasia"
+  box:
+    lon_min: 80
+    lon_max: 180
+    lat_min: -60
+    lat_max: -10
+    lon_sys: "EAST_WEST"
+    lat_sys: "SOUTH_NORTH"
+  xticks: [90, 120, 150, 180]
+  xtick_labels: ["90°E", "120°E", "150°E", "180°"]
+  yticks: [-55, -40, -25, -10]
+  ytick_labels: ["55°S", "40°S", "25°S", "10°S"]

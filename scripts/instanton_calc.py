@@ -40,7 +40,7 @@ if __name__ == "__main__":
     cfg = load_config(args.config_name, args.overrides)
     
     data_root_path = Path(cfg.paths.data_root)
-    na_box = instantiate(cfg.na_box)
+    domain_box = instantiate(cfg.domain_box)
     spatial_box = instantiate(cfg.box)
     output_dir = Path(cfg.paths.results_root + cfg.locations.output_folder)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -144,7 +144,7 @@ if __name__ == "__main__":
         logger.info("Computing statistics")
         comp_anom = (event_cube.mean(xconfig.lag).mean(xconfig.event) - climate_mean).rename(var_cfg.name)
         norm_var_tilde = (event_cube.var(xconfig.event) / climate_var).rename(var_cfg.name)
-        weight_var_tilde = na_box.spatial_mean(norm_var_tilde * 100).rename(var_cfg.name)
+        weight_var_tilde = domain_box.spatial_mean(norm_var_tilde * 100).rename(var_cfg.name)
         norm_var_hat = (event_cube.mean(xconfig.lag).var(xconfig.event) / climate_var).rename(var_cfg.name)
 
         df = calculate_degrees_of_freedom(

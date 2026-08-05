@@ -1,0 +1,5 @@
+# Northern-hemisphere heatwave season.
+calc_months_init: [5, 9]
+calc_months: [6, 8]
+climate_mean: "climate_mean_JJA.nc"
+climate_variance: "climate_var_JJA.nc"

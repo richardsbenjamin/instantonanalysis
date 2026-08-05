@@ -13,12 +13,22 @@ variables:
 xconfig:
   time_dim: "step"
 
+# The raw sample needs the full preparation: hours -> datetimes, offset/scale
+# applied, sub-daily steps averaged to days.
+preprocess:
+  step_to_datetime: true
+  transform: true
+  resample: true
+
 paths:
   data_root: "./data_local"
   data_file: "atmos_1week.nc"
   daily_data: "daily_atmos_1week.zarr"
   climate_mean: "climate_mean.nc"
   climate_variance: "climate_variance.nc"
+
+analysis:
+  calc_months: null   # one week of data — no seasonal window to select
 
 
 

@@ -1,0 +1,4 @@
+defaults:
+  - instanton_config
+  - override /locations: rio
+  - _self_

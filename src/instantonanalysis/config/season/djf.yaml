@@ -1,0 +1,5 @@
+# Southern-hemisphere heatwave season; the month windows wrap the year boundary.
+calc_months_init: [11, 3]
+calc_months: [12, 2]
+climate_mean: "climate_mean_DJF.nc"
+climate_variance: "climate_var_DJF.nc"

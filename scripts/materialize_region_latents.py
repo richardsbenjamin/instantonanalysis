@@ -1,9 +1,13 @@
-"""Materialize small Western-Europe region-filtered latent zarrs (GLOBAL_PLAN Layer 3).
+"""Materialize small region-filtered latent zarrs (GLOBAL_PLAN Layer 3).
 
-Filters full-field DLESyM latent zarrs (all encoder levels) to the Western-Europe box
+Filters full-field DLESyM latent zarrs (all encoder levels) to one region box
 once, so the analysis stages read ~150 MB zarrs instead of 27 GB full-field ones. The
 three spatial dims collapse to a per-level ``points_l{N}`` dim (the levels have
 different nsides, hence different in-box point counts).
+
+The region is a location config under ``config/locations/`` (``--region``,
+default ``western_europe``); ``se_australia``, ``north_china`` and ``se_brazil``
+are the regions around Adelaide, Beijing and Rio.
 
 Modes (run from the instantonanalysis .venv):
 
@@ -33,15 +37,23 @@ import xarray as xr
 
 from instantonanalysis.instanton.schemas.box import HealPixBox, LonLatBox
 from instantonanalysis.instanton.schemas.xconfig import XConfigHealPix
+from instantonanalysis.instanton.utils import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# The unified Western-Europe filter (locations/western_europe.yaml).
-WESTERN_EUROPE = LonLatBox(
-    lon_min=-5, lon_max=15, lat_min=52, lat_max=42,
-    lon_system="EAST_WEST", lat_system="NORTH_SOUTH",
-)
+
+def load_region(name: str) -> tuple[LonLatBox, str]:
+    """The region filter box and its label, from ``config/locations/<name>.yaml``."""
+    cfg = load_config(f"locations/{name}").locations
+    box = LonLatBox(
+        lon_min=cfg.box.lon_min, lon_max=cfg.box.lon_max,
+        lat_min=cfg.box.lat_min, lat_max=cfg.box.lat_max,
+        lon_system=cfg.box.lon_sys, lat_system=cfg.box.lat_sys,
+    )
+    label = (f"{cfg.name} ({box.lon_min}..{box.lon_max}E, "
+             f"{box.lat_min}..{box.lat_max}N)")
+    return box, label
 
 
 def latent_levels(ds: xr.Dataset) -> list[int]:
@@ -49,7 +61,7 @@ def latent_levels(ds: xr.Dataset) -> list[int]:
                   if v.startswith("encoder_l"))
 
 
-def filter_level(src: xr.Dataset, level: int, time_chunk: int) -> xr.DataArray:
+def filter_level(src: xr.Dataset, level: int, region: LonLatBox, time_chunk: int) -> xr.DataArray:
     """Region-filter one encoder level to ``(time, step, points_l{N}, channel_l{N})``.
 
     Streams over time chunks: the face-sliced l0 array is ~95 MB per date, so a
@@ -64,7 +76,7 @@ def filter_level(src: xr.Dataset, level: int, time_chunk: int) -> xr.DataArray:
         width_dim=f"width_l{level}",
     )
     nside = da.sizes[xcfg.height_dim]
-    box = HealPixBox.from_lonlat_box(nside, WESTERN_EUROPE)
+    box = HealPixBox.from_lonlat_box(nside, region)
     faces = sorted(set(box.f_list))
 
     parts = []
@@ -83,16 +95,17 @@ def filter_level(src: xr.Dataset, level: int, time_chunk: int) -> xr.DataArray:
     return out
 
 
-def filter_all_levels(src_path: str, time_chunk: int) -> xr.Dataset:
+def filter_all_levels(src_path: str, region_name: str, time_chunk: int) -> xr.Dataset:
     src = xr.open_zarr(src_path, decode_timedelta=True)
     levels = latent_levels(src)
     if not levels:
         raise ValueError(f"No encoder_l* variables in {src_path!r}")
-    logger.info(f"Filtering {src_path!r} (levels {levels}) to Western Europe")
-    ds = xr.Dataset({f"encoder_l{lvl}": filter_level(src, lvl, time_chunk)
+    region, region_label = load_region(region_name)
+    logger.info(f"Filtering {src_path!r} (levels {levels}) to {region_label}")
+    ds = xr.Dataset({f"encoder_l{lvl}": filter_level(src, lvl, region, time_chunk)
                      for lvl in levels})
     ds.attrs.update(src.attrs)
-    ds.attrs["region"] = "western_europe (-5..15E, 52..42N)"
+    ds.attrs["region"] = region_label
     ds.attrs["source"] = str(src_path)
     return ds
 
@@ -115,7 +128,7 @@ def delete_source(path: str) -> None:
 
 
 def run_event(args) -> None:
-    ds = filter_all_levels(args.source, args.time_chunk)
+    ds = filter_all_levels(args.source, args.region, args.time_chunk)
     verify_region_ds(ds, args.expect_times)
     ds = ds.chunk({"time": args.time_chunk})
     logger.info(f"Writing {args.out!r}")
@@ -127,7 +140,7 @@ def run_event(args) -> None:
 
 
 def run_clim_batch(args) -> None:
-    ds = filter_all_levels(args.source, args.time_chunk)
+    ds = filter_all_levels(args.source, args.region, args.time_chunk)
     verify_region_ds(ds, None)
     ds = ds.chunk({"time": args.time_chunk})
     out = Path(args.out)
@@ -192,9 +205,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="mode", required=True)
 
+    region_help = "location config name under config/locations/ to filter to"
+
     ev = sub.add_parser("event", help="full-field event zarr -> region_latents zarr")
     ev.add_argument("--source", required=True)
     ev.add_argument("--out", required=True)
+    ev.add_argument("--region", default="western_europe", help=region_help)
     ev.add_argument("--expect-times", type=int, default=50)
     ev.add_argument("--delete-source", action="store_true")
     ev.add_argument("--time-chunk", type=int, default=10)
@@ -203,6 +219,7 @@ if __name__ == "__main__":
     cb = sub.add_parser("clim-batch", help="append full-field clim batch to clim_latents zarr")
     cb.add_argument("--source", required=True)
     cb.add_argument("--out", required=True)
+    cb.add_argument("--region", default="western_europe", help=region_help)
     cb.add_argument("--delete-source", action="store_true")
     cb.add_argument("--time-chunk", type=int, default=10)
     cb.set_defaults(func=run_clim_batch)

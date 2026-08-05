@@ -1,0 +1,12 @@
+defaults:
+    - _base_location
+
+name: "north_china"
+output_folder: "/north_china"
+box:
+  lon_min: 106
+  lon_max: 126
+  lat_min: 45
+  lat_max: 35
+  lon_sys: "EAST_WEST"
+  lat_sys: "NORTH_SOUTH"

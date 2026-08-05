@@ -1,12 +1,12 @@
 defaults:
   - locations: paris
   - spatial: healpix
-  - /locations@locations.north_america: north_america
   - /variables@variables.t2m: t2m
   - /variables@variables.z500: z500
   - _self_
-  
-na_box: ${healpix_from_config:${nside},${locations.north_america.box}}
+
+# Large-scale domain the location sits in; used for the weighted_var_tilde spatial mean.
+domain_box: ${healpix_from_config:${nside},${locations.domain.box}}
 nside: 64
 
 variables:
@@ -21,8 +21,8 @@ xconfig:
 paths:
   data_root: "/home/benjamin/data"
   data_file: "daily_atmos_hpx64_100year.zarr"
-  climate_mean: "climate_mean_JJA.nc"
-  climate_variance: "climate_var_JJA.nc"
+  climate_mean: ${locations.season.climate_mean}
+  climate_variance: ${locations.season.climate_variance}
   results_root: "./outputs/healpix_100year"
   auto_correlation: "auto_correlation.nc"
   closest_neighbours: "closest_neighbours.nc"
@@ -36,8 +36,8 @@ paths:
 
 analysis:
   autocorr_days: 31
-  calc_months_init: [5, 9]
-  calc_months: [6, 8]
+  calc_months_init: ${locations.season.calc_months_init}
+  calc_months: ${locations.season.calc_months}
   dist_func: "squared_error"
   nb_closest: 50
   rolling_periods: [1, 5]

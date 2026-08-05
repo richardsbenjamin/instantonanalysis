@@ -1,5 +1,7 @@
 defaults:
     - _base_location
+    - /season@season: jja
+    - _self_
 
 name: "paris"
 output_folder: "/paris"
@@ -10,3 +12,16 @@ box:
   lat_max: 49
   lon_sys: "CONTINUOUS"
   lat_sys: "NORTH_SOUTH"
+domain:
+  name: "north_atlantic"
+  box:
+    lon_min: -80
+    lon_max: 50
+    lat_min: 22.5
+    lat_max: 70
+    lon_sys: "EAST_WEST"
+    lat_sys: "SOUTH_NORTH"
+  xticks: [0, 30, 60, -30, -60]
+  xtick_labels: ["0°", "30°E", "60°E", "30°W", "60°W"]
+  yticks: [25, 45, 65]
+  ytick_labels: ["25°N", "45°N", "65°N"]

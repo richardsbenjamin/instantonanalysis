@@ -12,13 +12,11 @@ import xarray as xr
 from hydra.utils import instantiate
 from tqdm import tqdm
 
-from instantonanalysis.instanton.schemas.box import (
-    HealPixBox,
-    LonLatBox, 
-    LongitudeSystem, 
-    LatitudeSystem,
-)
 from instantonanalysis.instanton.plotting import (
+    get_location,
+    latlon_box,
+    load_location_data,
+    make_ticklabel_funcs,
     plot_density_panel,
     plot_quantile_panels,
 )
@@ -41,52 +39,43 @@ if TYPE_CHECKING:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-YTICKS = [25, 45, 65]
-XTICKS = [0, 30, 60, -30, -60]
 PANEL_LABELS = ['(a)','(b)','(c)','(d)']
-XTICK_LABELS = ['0°', '30°E', '60°E', '30°W', '60°W']
-YTICK_LABELS = ['25°N', '45°N', '65°N']
 
-
-def load_data(data_root: str, locations: list[str], filenames: list[str]) -> dict:
-    return {
-        location: {
-            filename: xr.open_dataset(f"{data_root}/{location}/{filename}.nc")
-            for filename in filenames
-        }
-        for location in locations
-    }
 
 def plot_densities(
-        var_cfg: VariableConfig, 
-        data_in: dict, 
-        locations: dict[str, str], 
-        rolling_periods_tab: list[int], 
-        select_months: list[int], 
+        var_cfg: VariableConfig,
+        data_in: dict,
+        locations: dict,
+        location_folders: list[str],
+        rolling_periods_tab: list[int],
+        default_months: list[int],
         time_dim: str,
         quantile_dim: str,
         results_path: str,
     ) -> None:
     var = var_cfg.name
 
-    rows, cols = len(locations), len(rolling_periods_tab)
+    rows, cols = len(location_folders), len(rolling_periods_tab)
     panels = generate_panels(rows, cols)
 
     plt.rc('font', family='serif', size=20)
     fig, axes = plt.subplots(
-        nrows=rows, 
-        ncols=cols, 
-        figsize=(20, 10), 
-        sharex=True, 
-        sharey=True, 
+        nrows=rows,
+        ncols=cols,
+        figsize=(20, 10),
+        sharex=True,
+        sharey=True,
         constrained_layout=True
     )
     axes = axes.flatten()
-    for i, location in enumerate(locations):
+    for i, location in enumerate(location_folders):
+        # Each location is filtered to its own heatwave season (JJA/DJF).
+        season = get_location(locations, location).season
+        select_months = list(season.calc_months) if season else default_months
         for j, r in enumerate(rolling_periods_tab):
             rolling = data_in[location]["series_obs"][var].rolling(**{time_dim: r, "center": True}).mean()
             data_slice = filter_by_months(rolling, time_dim, select_months)
-            
+
             neighbors_celsius = data_in[location]["closest_neighbours"][var].sel(rolling_period=r) 
             
             is_last_row = (i == rows - 1)
@@ -104,7 +93,8 @@ def plot_densities(
                 ylabel="Density" if is_first_col else "",
                 show_legend=is_legend_cell,
             )
-    plt.savefig(f"{results_path}/{location}/{var}_density_plot.png", dpi=300, bbox_inches='tight')
+    # One grid figure covers every location; it is filed under the first of them.
+    plt.savefig(f"{results_path}/{location_folders[0]}/{var}_density_plot.png", dpi=300, bbox_inches='tight')
 
 def plot_quantile_data(
         data_in: dict, 
@@ -114,7 +104,6 @@ def plot_quantile_data(
         select_months: list[int], 
         time_dim: str,
         quantile_dim: str,
-        extract_box: IBox,
         results_path: str,
         cb_label: str,
         levels_cf: Optional[list[float]] = None,
@@ -123,42 +112,33 @@ def plot_quantile_data(
         extend: str = "both",
     ) -> None:
     for location, data_dict in data_in.items():
-        composites = extract_box.extract(data_dict[plot_data])
-        
+        location_obj = get_location(locations, location)
+        domain = location_obj.domain
+        composites = latlon_box(domain.box).extract(data_dict[plot_data])
+        lon_lat_box = latlon_box(location_obj.box)
+        xticklabels_func, yticklabels_func = make_ticklabel_funcs(domain)
+
         for r in rolling_periods_tab:
             fig = plt.figure(figsize=(27,10))
             gs = fig.add_gridspec((len(composites[quantile_dim])-1)//2+1,2)
-            lon_lat_box = instantiate(next(
-                location_obj.box for location_obj in locations.values() if location_obj.output_folder == location
-            ))
             contour_in = composites.sel({"rolling_period": r})
             fig = plot_quantile_panels(
-                quantile_dim=quantile_dim, 
-                contourf_data=contour_in["t2m0"], 
-                contour_data=contour_in["z500"] / 9.80665, 
-                box=lon_lat_box, 
-                title_func=title_func, 
-                label=cb_label, 
+                quantile_dim=quantile_dim,
+                contourf_data=contour_in["t2m0"],
+                contour_data=contour_in["z500"] / 9.80665,
+                box=lon_lat_box,
+                title_func=title_func,
+                label=cb_label,
                 levels_cf=levels_cf,
-                levels_c=levels_c, 
-                xticks=XTICKS, 
-                yticks=YTICKS, 
-                xticklabels_func=xticklabels_func, 
+                levels_c=levels_c,
+                xticks=list(domain.xticks),
+                yticks=list(domain.yticks),
+                xticklabels_func=xticklabels_func,
                 yticklabels_func=yticklabels_func,
-                cmap=cmap, 
+                cmap=cmap,
                 extend=extend,
             )
             plt.savefig(f"{results_path}/{location}/composite_anomalies_r{r}.png", dpi=300, bbox_inches='tight')
-
-
-na_box = LonLatBox(
-    lon_min=-80,
-    lon_max=50,
-    lat_min=22.5,
-    lat_max=70,
-    lon_system=LongitudeSystem.EAST_WEST,
-    lat_system=LatitudeSystem.SOUTH_NORTH,
-)
 
 
 if __name__ == "__main__":
@@ -167,7 +147,6 @@ if __name__ == "__main__":
       
     filenames = cfg.paths.filenames
     locations = cfg.locations
-    location_folders = [location.output_folder for location in locations.values()]
     quantiles = cfg.analysis.quantiles
     rolling_periods_tab = cfg.analysis.rolling_periods
     select_months = cfg.analysis.select_months
@@ -178,13 +157,21 @@ if __name__ == "__main__":
     quantile_dim = xconfig.quantile
 
     logger.info("Loading data")
-    data_in = load_data(cfg.paths.results_root, location_folders, filenames)
+    data_in = load_location_data(
+        cfg.paths.results_root,
+        [location.output_folder for location in locations.values()],
+        filenames,
+    )
+    location_folders = list(data_in)
+    if not location_folders:
+        raise SystemExit("No location in plot_config has outputs to plot")
 
     logger.info("Plotting density panels")
     var_cfg = cfg.variables["t2m"]
     plot_densities(
         var_cfg,
         data_in,
+        locations,
         location_folders,
         rolling_periods_tab,
         select_months,
@@ -193,8 +180,6 @@ if __name__ == "__main__":
         cfg.paths.results_root,
     )
     
-    xticklabels_func = lambda i: XTICK_LABELS if i // 2 == 1  else ""
-    yticklabels_func = lambda i: YTICK_LABELS if i % 2 == 0 else ""
     title_func = lambda i, q: fr"({chr(ord('a') + i)}) $\alpha = {q}$"
 
     data_in_ll = {}
@@ -222,7 +207,6 @@ if __name__ == "__main__":
         select_months=select_months,
         time_dim=time_dim,
         quantile_dim=quantile_dim,
-        extract_box=na_box,
         results_path=cfg.paths.results_root,
         cb_label="Anomaly of T2M [°C]",
         levels_cf=cfg.variables["t2m"].contour_levels.composite,
@@ -231,27 +215,30 @@ if __name__ == "__main__":
     logger.info("Plotting normalised var hat")
     for var_cfg in cfg.variables.values():
         for location, data_dict in data_in_ll.items():
-            composites = na_box.extract(data_dict["composite_anomalies"][var_cfg.name]) / var_cfg.scale
-            var_hats = na_box.extract(data_dict["normalised_var_hat"][var_cfg.name]) * 100
-            
+            location_obj = get_location(locations, location)
+            domain = location_obj.domain
+            domain_box = latlon_box(domain.box)
+            lon_lat_box = latlon_box(location_obj.box)
+            xticklabels_func, yticklabels_func = make_ticklabel_funcs(domain)
+
+            composites = domain_box.extract(data_dict["composite_anomalies"][var_cfg.name]) / var_cfg.scale
+            var_hats = domain_box.extract(data_dict["normalised_var_hat"][var_cfg.name]) * 100
+
             for r in rolling_periods_tab:
                 fig = plt.figure(figsize=(27,10))
                 gs = fig.add_gridspec((len(composites[quantile_dim])-1)//2+1,2)
-                lon_lat_box = instantiate(next(
-                    location_obj.box for location_obj in locations.values() if location_obj.output_folder == location
-                ))
                 fig = plot_quantile_panels(
-                    quantile_dim=quantile_dim, 
-                    contourf_data=var_hats.sel({"rolling_period": r}), 
-                    contour_data=composites.sel({"rolling_period": r}), 
-                    box=lon_lat_box, 
-                    title_func=title_func, 
+                    quantile_dim=quantile_dim,
+                    contourf_data=var_hats.sel({"rolling_period": r}),
+                    contour_data=composites.sel({"rolling_period": r}),
+                    box=lon_lat_box,
+                    title_func=title_func,
                     label=r"$\hat{V}$ [%]",
-                    xticks=XTICKS, 
-                    yticks=YTICKS, 
-                    xticklabels_func=xticklabels_func, 
+                    xticks=list(domain.xticks),
+                    yticks=list(domain.yticks),
+                    xticklabels_func=xticklabels_func,
                     yticklabels_func=yticklabels_func,
-                    cmap="viridis", 
+                    cmap="viridis",
                     extend="max",
                     alpha=0.8,
                     levels_cf=var_cfg.contour_levels.var_hat,

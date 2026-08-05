@@ -2,6 +2,9 @@ defaults:
   - /variables@variables.t2m: t2m
   - /variables@variables.z500: z500
   - /locations@locations.paris: paris
+  - /locations@locations.adelaide: adelaide
+  - /locations@locations.beijing: beijing
+  - /locations@locations.rio: rio
   - spatial: healpix
   - _self_
 

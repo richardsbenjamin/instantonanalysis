@@ -1,3 +1,7 @@
 name: ???
 output_folder: ???
 box: ???
+
+# Only run-target (city) locations set these; region locations leave them null.
+season: null
+domain: null

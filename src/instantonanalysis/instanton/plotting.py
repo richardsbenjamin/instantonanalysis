@@ -1,18 +1,25 @@
 from __future__ import annotations
 
+import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import cartopy.crs as ccrs
 import numpy as np
 import matplotlib.pyplot as plt
+import xarray as xr
+from hydra.utils import instantiate
+
+from instantonanalysis.hydra_logic.resolvers import resolve_latlon_from_cfg
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Dict, Iterable, Optional, Tuple, List
 
-    import xarray as xr
     from cartopy import crs as ccrs
 
     from instantonanalysis.instanton.schemas.box import IBox
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_ADD_AXES = [0.91, 0.05, 0.02, 0.9]
 DEFAULT_COLOURS = ['gold','darkorange', 'red', 'black']
@@ -39,6 +46,51 @@ LEGEND_KWARGS = {
     "prop": {"size": 13},
 }
 
+
+def get_location(locations: Dict, output_folder: str):
+    """The location config whose ``output_folder`` matches ``output_folder``."""
+    return next(
+        location_obj for location_obj in locations.values()
+        if location_obj.output_folder == output_folder
+    )
+
+def latlon_box(cfg_box) -> IBox:
+    """Build a LonLatBox from a location config's ``box`` block."""
+    return instantiate(resolve_latlon_from_cfg(cfg_box))
+
+def make_ticklabel_funcs(domain_cfg) -> Tuple[Callable, Callable]:
+    """Panel-position-aware tick labellers for one location's domain.
+
+    Labels are drawn on the bottom row and the left column only.
+    """
+    xtick_labels = list(domain_cfg.xtick_labels)
+    ytick_labels = list(domain_cfg.ytick_labels)
+    return (
+        lambda i: xtick_labels if i // 2 == 1 else "",
+        lambda i: ytick_labels if i % 2 == 0 else "",
+    )
+
+def load_location_data(
+        data_root: str,
+        locations: List[str],
+        filenames: List[str],
+    ) -> Dict[str, Dict[str, xr.Dataset]]:
+    """Open each location's outputs, skipping locations that have not been run."""
+    data_in = {}
+    for location in locations:
+        folder = Path(f"{data_root}/{location}")
+        missing = [f for f in filenames if not (folder / f"{f}.nc").exists()]
+        if missing:
+            logger.warning(
+                f"Skipping {location}: no {', '.join(missing)} in {folder} "
+                "(has the analysis been run for this location?)"
+            )
+            continue
+        data_in[location] = {
+            filename: xr.open_dataset(folder / f"{filename}.nc")
+            for filename in filenames
+        }
+    return data_in
 
 def plot_autocorrelation(
         auto_corr_series: np.ndarray, 

@@ -123,15 +123,22 @@ def filter_by_lon_lat(
     })
     
 def filter_by_months(
-    series: xr.DataArray, 
-    time_dim: str, 
+    series: xr.DataArray,
+    time_dim: str,
     filter_months: tuple[int, int],
 ) -> xr.DataArray:
-    return series.sel({
-        time_dim: 
-            (series[f"{time_dim}.month"] >= filter_months[0]) & 
-            (series[f"{time_dim}.month"] <= filter_months[1])
-    })
+    """Select the (start, end) month window, wrapping over the year boundary.
+
+    A start month after the end month (e.g. DJF = (12, 2)) selects the months
+    that wrap through December, rather than the empty contiguous range.
+    """
+    months = series[f"{time_dim}.month"]
+    start, end = filter_months
+    if start <= end:
+        mask = (months >= start) & (months <= end)
+    else:
+        mask = (months >= start) | (months <= end)
+    return series.sel({time_dim: mask})
 
 def generate_panels(rows: int, cols: int) -> list[list[str]]:
     start_code = ord('a')
@@ -158,11 +165,17 @@ def select_data(data: xr.Dataset, d, j_begin: int, j_end: int, time_dim: str) ->
     })
 
 def transform_data(
-        data: xr.Dataset, 
-        var_cfg: VariableConfig, 
+        data: xr.Dataset,
+        var_cfg: VariableConfig,
     ) -> None:
+    """Put raw data into the units the pipeline stores, e.g. t2m K -> degC.
+
+    Only `offset` is applied. `var_cfg.scale` is a *plotting* factor that
+    `plot.py` divides by (z500 geopotential -> metres); applying it here would
+    inflate the stored data by g.
+    """
     if var_cfg.squeeze:
         data = data.squeeze(*var_cfg.squeeze)
     if var_cfg.transpose:
         data = data.transpose(*var_cfg.transpose)
-    return data * var_cfg.scale_factor + var_cfg.offset
+    return data + var_cfg.offset

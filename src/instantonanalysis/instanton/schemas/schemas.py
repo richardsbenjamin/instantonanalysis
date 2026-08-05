@@ -53,7 +53,7 @@ class VariableConfig:
     alias: str
     unit: str
     offset: float
-    scale_factor: float
+    scale: float
     contour_levels: tuple[int, int]
     transpose: Optional[tuple[str]] = None 
     squeeze: Optional[tuple[str]] = None

@@ -1,0 +1,4 @@
+defaults:
+  - climate_config_100year
+  - override /season: djf
+  - _self_
