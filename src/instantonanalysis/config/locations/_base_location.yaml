@@ -1,0 +1,9 @@
+name: ???
+output_folder: ???
+box: ???
+
+season: null
+domain: null
+
+plot:
+  density_xlim: [0, 45]

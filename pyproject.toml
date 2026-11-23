@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "instantonanalysis"
+version = "0.1.0"
+description = "A deep learning climate emulator encodes the typicality of extreme heatwaves in its latent space"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "numpy",
+  "scipy",
+  "pandas",
+  "xarray",
+  "dask",
+  "zarr<3",
+  "numcodecs>=0.12,<0.13",
+  "netcdf4",
+  "cftime",
+  "healpy",
+  "reproject",
+  "astropy",
+  "cartopy",
+  "matplotlib",
+  "hydra-core",
+  "omegaconf",
+  "tqdm",
+  "scikit-learn>=1.9.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

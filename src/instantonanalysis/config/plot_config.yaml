@@ -1,0 +1,28 @@
+defaults:
+  - locations: paris
+  - spatial: healpix
+  - /variables@variables.t2m: t2m
+  - /variables@variables.z500: z500
+  - _self_
+
+nside: 64
+
+xconfig:
+  time_dim: "step"
+
+paths:
+  results_root: "/home/benjamin/instantonanalysis/outputs"
+  series_obs: "${locations.name}_series_obs.nc"
+  closest_neighbours: "${locations.name}_closest_neighbours.nc"
+  composite_anomalies: "${locations.name}_composite_anomalies.nc"
+  normalised_var_hat: "${locations.name}_normalised_var_hat.nc"
+  chi_masks: "${locations.name}_chi_masks.nc"
+  remap_keys: ["composite_anomalies", "normalised_var_hat"]
+  density_plot: "${locations.name}_density_plot_{var}.png"
+  composite_plot: "${locations.name}_composite_anomalies_r{r}.png"
+  var_hat_plot: "${locations.name}_var_hat_{var}_r{r}.png"
+
+analysis:
+  rolling_periods: [1, 5]
+  quantiles: [0.75, 0.95, 0.99, 0.999]
+  calc_months: ${locations.season.calc_months}

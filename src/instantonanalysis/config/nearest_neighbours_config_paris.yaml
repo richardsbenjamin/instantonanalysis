@@ -1,0 +1,4 @@
+defaults:
+  - nearest_neighbours_config
+  - override /locations: paris
+  - _self_

@@ -1,0 +1,4 @@
+defaults:
+  - plot_config
+  - override /locations: paris
+  - _self_

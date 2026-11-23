@@ -1,0 +1,26 @@
+defaults:
+  - locations: paris
+  - spatial: healpix
+  - /variables@variables.t2m: t2m
+  - _self_
+
+nside: 64
+
+xconfig:
+  time_dim: "step"
+
+paths:
+  results_root: "/home/benjamin/instantonanalysis/outputs"
+  series_obs: "${locations.name}_series_obs.nc"
+  auto_correlation: "${locations.name}_auto_correlation.nc"
+  quantile_threshold: "${locations.name}_quantile_threshold.nc"
+  closest_neighbours: "${locations.name}_closest_neighbours.nc"
+  neighbour_dates: "${locations.name}_neighbour_dates.nc"
+
+analysis:
+  autocorr_days: 31
+  calc_months: ${locations.season.calc_months}
+  dist_func: "squared_error"
+  nb_closest: [900, 900, 900, 900]
+  rolling_periods: [1, 5]
+  quantiles: [0.75, 0.95, 0.99, 0.999]

@@ -1,0 +1,31 @@
+defaults:
+  - locations: paris
+  - spatial: healpix
+  - /variables@variables.t2m: t2m
+  - /variables@variables.z500: z500
+  - _self_
+
+domain_box: ${healpix_from_config:${nside},${locations.domain.box}}
+nside: 64
+
+variables:
+  t2m:
+    transpose: ["step", "face", "height", "width"]
+  z500:
+    transpose: ["step", "face", "height", "width"]
+
+xconfig:
+  time_dim: "step"
+
+paths:
+  data_root: "/home/benjamin/instantonanalysis/data"
+  data_file: "daily_atmos_dlesym_2000year.zarr"
+  climate_mean: ${locations.season.climate_mean}
+  climate_variance: ${locations.season.climate_variance}
+  results_root: "/home/benjamin/instantonanalysis/outputs"
+  neighbour_dates: "${locations.name}_neighbour_dates.nc"
+  composite_anomalies: "${locations.name}_composite_anomalies.nc"
+  normalised_var_tilde: "${locations.name}_normalised_var_tilde.nc"
+  weighted_var_tilde: "${locations.name}_weighted_var_tilde.nc"
+  normalised_var_hat: "${locations.name}_normalised_var_hat.nc"
+  chi_masks: "${locations.name}_chi_masks.nc"

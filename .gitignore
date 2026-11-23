@@ -1,0 +1,11 @@
+*.nc
+*.zarr
+.venv
+__pycache__
+data/*
+data_local/*
+outputs/*
+*.png
+*.egg-info
+uv.lock
+.python-version

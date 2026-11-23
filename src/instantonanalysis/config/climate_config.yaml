@@ -1,0 +1,12 @@
+defaults:
+  - /season@season: jja
+  - _self_
+
+paths:
+  data_root: "/home/benjamin/data"
+  data_file: "daily_atmos_dlesym_2000year.zarr"
+  climate_mean: ${season.climate_mean}
+  climate_variance: ${season.climate_variance}
+
+analysis:
+  calc_months: ${season.calc_months}

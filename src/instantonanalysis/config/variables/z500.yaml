@@ -1,0 +1,15 @@
+defaults:
+    - _base_var
+
+name: "z500"
+alias: "z500"
+offset: 0
+scale: 9.80665
+unit: "hPa"
+long_name: "Z500"
+contour_levels:
+    composite: "${arange: -100, 120, 20}"
+    var_hat: "${arange: 0, 70, 10}"
+data_path: "z500.nc"
+climate_mean_path: "z500_mean.nc"
+climate_var_path: "z500_variance.nc"

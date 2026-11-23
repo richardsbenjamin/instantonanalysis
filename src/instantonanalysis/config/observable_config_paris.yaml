@@ -1,0 +1,4 @@
+defaults:
+  - observable_config
+  - override /locations: paris
+  - _self_

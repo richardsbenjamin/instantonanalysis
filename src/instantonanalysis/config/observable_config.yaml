@@ -1,0 +1,19 @@
+defaults:
+  - locations: paris
+  - spatial: healpix
+  - /variables@variables.t2m: t2m
+  - _self_
+
+nside: 64
+
+xconfig:
+  time_dim: "step"
+
+paths:
+  data_root: "/home/benjamin/instantonanalysis/data"
+  data_file: "daily_atmos_dlesym_2000year.zarr"
+  results_root: "/home/benjamin/instantonanalysis/outputs"
+  series_obs: "${locations.name}_series_obs.nc"
+
+analysis:
+  calc_months_init: ${locations.season.calc_months_init}

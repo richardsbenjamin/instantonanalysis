@@ -1,0 +1,41 @@
+defaults:
+  - locations: western_europe
+  - _self_
+
+nside: 16
+box: ${healpix_from_config:${nside},${locations.box}}
+box64: ${healpix_from_config:64,${locations.box}}
+
+paths:
+  latent_root: "/home/benjamin/DLESyM_test/outputs"
+  city: "paris"
+  heatwave: "${paths.latent_root}/region_latents_${paths.city}_q${analysis.event_quantile}.zarr"
+  physical_heatwave: "${paths.latent_root}/region_physical_${paths.city}_q${analysis.event_quantile}.zarr"
+  no_heatwave: "${paths.latent_root}/region_latents_nonheatwave.zarr"
+  physical_no_heatwave: "${paths.latent_root}/atmos_hpx64_4days_nonheatwave.nc"
+  clim_latents: "${paths.latent_root}/clim_latents.zarr"
+  physical_var_hat: "./outputs/${paths.city}/${paths.city}_normalised_var_hat.nc"
+  neighbours: "./outputs/${paths.city}/${paths.city}_closest_neighbours.nc"
+  quantile_threshold: "./outputs/${paths.city}/${paths.city}_quantile_threshold.nc"
+  output_dir: "./outputs/latent_ldt"
+
+analysis:
+  var: "encoder_l2"
+  level: 2
+  event_quantile: 0.999
+  rolling_period: 1
+  n_closest: null
+  window_hours: 24
+  k: 15
+  n_null: 200
+  seed: 42
+  probe_vars: ["t2m0", "z500"]
+  pushforward_var: "t2m0"
+
+xconfig:
+  _target_: instantonanalysis.instanton.schemas.xconfig.XConfigHealPix
+  time_dim: time
+  channel_dim: channel_l2
+  face_dim: face
+  height_dim: height_l2
+  width_dim: width_l2
