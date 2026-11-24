@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite it using the metadata below."
+type: software
+title: "instantonanalysis: analysis code for \"A deep learning climate emulator encodes the typicality of extreme heatwaves in its latent space\""
+version: 0.1.0
+authors:
+  - family-names: Richards
+    given-names: Benjamin
+    email: richardsbenjaminpeter@gmail.com
+    orcid: "https://orcid.org/0009-0003-3692-7131"
+repository-code: "https://github.com/richardsbenjamin/instantonanalysis"
+license: MIT
+abstract: >-
+  Analysis code for the paper "A deep learning climate emulator encodes the
+  typicality of extreme heatwaves in its latent space". Analyses are
+  conditioned on the Paris box (1.25-3.75°E, 49-50°N) in JJA on the HEALPix
+  nside-64 grid of the DLESyM coupled atmosphere-ocean emulator, covering
+  physical heatwave diagnostics and analysis of DLESyM latent
+  representations.
+keywords:
+  - climate emulator
+  - deep learning
+  - heatwaves
+  - extreme events
+  - interpretability
+  - latent space
+  - DLESyM
+  - HEALPix
